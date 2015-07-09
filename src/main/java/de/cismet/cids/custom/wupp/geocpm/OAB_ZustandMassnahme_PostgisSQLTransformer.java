@@ -66,16 +66,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         // we rely on the framework to call accept
         final WuppGeoCPMProject proj = (WuppGeoCPMProject)obj;
 
-        final File sqlFile;
-        try {
-            sqlFile = File.createTempFile("oab_zustandmassnahme_" + obj.getName() + "_", ".sql"); // NOI18N
-        } catch (final IOException ex) {
-            final String message = "cannot create sql output file";                               // NOI18N
-            if (log.isErrorEnabled()) {
-                log.error(message, ex);
-            }
-            throw new TransformException(message, ex);
-        }
+        final File sqlFile = new File(proj.getOutputFolder(), "oab_zustandmassnahme_" + obj.getName() + ".sql"); // NOI18N;
 
         try(final BufferedWriter bw = new BufferedWriter(new FileWriter(sqlFile))) {
             bw.write("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;"); // NOI18N

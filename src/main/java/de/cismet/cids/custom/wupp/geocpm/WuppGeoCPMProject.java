@@ -9,6 +9,7 @@ package de.cismet.cids.custom.wupp.geocpm;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.File;
 
@@ -22,11 +23,14 @@ import de.cismet.geocpm.api.GeoCPMProject;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class WuppGeoCPMProject extends GeoCPMProject {
 
     //~ Instance fields --------------------------------------------------------
 
     private File zustandMassnahmeSqlFile;
+    private File projectSqlFile;
+    private File outputFolder;
     private Type type;
     private String catchmentName;
     private String projectName;
@@ -38,4 +42,5 @@ public class WuppGeoCPMProject extends GeoCPMProject {
     private String wmsBaseUrl;
     private String wmsCapabilitiesUrl;
     private String wmsGetMapTemplateUrl;
+    private String contractor;
 }
