@@ -80,13 +80,16 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         assertFalse(t.accept(p));
 
         ((WuppGeoCPMProject)p).setProjectName("test");
+        assertFalse(t.accept(p));
+        
+        ((WuppGeoCPMProject)p).setCatchmentName("test");
         assertTrue(t.accept(p));
     }
 
     /**
      * Test of transform method, of class OAB_ZustandMassnahme_PostgisSQLTransformer.
      */
-    //@Test
+    @Test
     public void testTransform() throws Exception {
         printCurrentTestName();
         
@@ -98,6 +101,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         p.setDescription("zustdescription1");
         p.setProjectName("projectname1");
         p.setDescription("projectdescription1");
+        p.setCatchmentName("catchment1");
+        p.setWmsBaseUrl("https://to.be/changed");
         
         InputStreamReader r = new InputStreamReader(
                 getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPM.ein"));

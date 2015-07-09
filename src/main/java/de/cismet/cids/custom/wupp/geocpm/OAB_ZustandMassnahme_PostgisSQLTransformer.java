@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -40,13 +41,24 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
     @Override
     public boolean accept(final GeoCPMProject obj) {
-        return (obj instanceof WuppGeoCPMProject)
-                    && (obj.getTriangles() != null)
-                    && !obj.getTriangles().isEmpty()
-                    && (obj.getResults() != null)
-                    && !obj.getResults().isEmpty()
-                    && (((WuppGeoCPMProject)obj).getProjectName() != null)
-                    && !((WuppGeoCPMProject)obj).getProjectName().isEmpty();
+        boolean accept = false;
+
+        if (obj instanceof WuppGeoCPMProject) {
+            accept = (obj.getTriangles() != null)
+                        && !obj.getTriangles().isEmpty()
+                        && (obj.getResults() != null)
+                        && !obj.getResults().isEmpty();
+
+            if (accept) {
+                final WuppGeoCPMProject proj = (WuppGeoCPMProject)obj;
+                accept = (proj.getProjectName() != null)
+                            && !proj.getProjectName().isEmpty()
+                            && (proj.getCatchmentName() != null)
+                            && !proj.getCatchmentName().isEmpty();
+            }
+        }
+
+        return accept;
     }
 
     @Override
@@ -56,9 +68,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
         final File sqlFile;
         try {
-            sqlFile = File.createTempFile("oab_zustandmassnahme_" + obj.getName() + "_", ".sql");
+            sqlFile = File.createTempFile("oab_zustandmassnahme_" + obj.getName() + "_", ".sql"); // NOI18N
         } catch (final IOException ex) {
-            final String message = "cannot create sql output file"; // NOI18N
+            final String message = "cannot create sql output file";                               // NOI18N
             if (log.isErrorEnabled()) {
                 log.error(message, ex);
             }
@@ -72,18 +84,26 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
             writeZustandMassnahme(bw, proj);
             bw.newLine();
+            bw.newLine();
 
             writeBerechnung(bw, proj);
+            bw.newLine();
             bw.newLine();
 
             writeData(bw, proj);
             bw.newLine();
+            bw.newLine();
 
             writeBoundingGeometry(bw);
             bw.newLine();
+            bw.newLine();
+
+            writeViews(bw, proj);
+            bw.newLine();
+            bw.newLine();
 
             bw.newLine();
-            bw.write("COMMIT;");
+            bw.write("COMMIT;"); // NOI18N
 
             proj.setZustandMassnahmeSqlFile(sqlFile);
         } catch (final IOException ex) {
@@ -106,18 +126,167 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      * @throws  IOException  DOCUMENT ME!
      */
     private void writeZustandMassnahme(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+        final String tinLayername = createTinName(proj);
+        final String beLayername = createBEName(proj);
+        final String capUrl = createWMSCapabilitiesUrl(proj);
         // the geometry cannot be set yet
         bw.write("INSERT INTO oab_zustand_massnahme ("
                     + "projekt, "
                     + "typ, "
                     + "beschreibung, "
-                    + "name"
+                    + "name, "
+                    + "tin_cap, "
+                    + "tin_layer_name, "
+                    + "tin_simple_getmap, "
+                    + "bruchkanten_cap, "
+                    + "bruchkanten_layer_name, "
+                    + "bruchkanten_simple_getmap"
                     + ") VALUES ("
-                    + "(SELECT id FROM oab_projekt WHERE name = '" + proj.getProjectName() + "'), "
+                    + "(SELECT id * -1 FROM oab_projekt WHERE \"name\" = '" + proj.getProjectName()
+                    + "' AND abs(gewaessereinzugsgebiet) = "
+                    + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" + proj.getCatchmentName()
+                    + "')), "
                     + "(SELECT id FROM oab_zm_typ WHERE name = '" + proj.getType() + "'), "
                     + "'" + proj.getDescription() + "', "
-                    + "'" + proj.getName() + "'"
+                    + "'" + proj.getName() + "', "
+                    + "'" + capUrl + "', "
+                    + "'" + tinLayername + "', "
+                    + "'" + createWMSGetMapUrl(tinLayername, proj) + "', "
+                    + "'" + capUrl + "', "
+                    + "'" + beLayername + "', "
+                    + "'" + createWMSGetMapUrl(beLayername, proj) + "'"
                     + ");");
+        bw.newLine();
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   proj  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createWMSCapabilitiesUrl(final WuppGeoCPMProject proj) {
+        final String url;
+        if (proj.getWmsCapabilitiesUrl() != null) {
+            url = proj.getWmsCapabilitiesUrl();
+        } else if (proj.getWmsBaseUrl() != null) {
+            url = proj.getWmsBaseUrl() + "?service=wms&version=1.1.1&request=GetCapabilities"; // NOI18N
+        } else {
+            url = "<n/a>";                                                                     // NOI18N
+        }
+
+        return url;
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   layername  DOCUMENT ME!
+     * @param   proj       DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createWMSGetMapUrl(final String layername, final WuppGeoCPMProject proj) {
+        final String url;
+        if (proj.getWmsGetMapTemplateUrl() == null) {
+            if (proj.getWmsBaseUrl() == null) {
+                url = "<n/a>";                                                                                // NOI18N
+            } else {
+                url = proj.getWmsBaseUrl() + "?version=1.1.1&request=GetMap&bbox=<cismap:boundingBox>"        // NOI18N
+                            + "&width=<cismap:width>&height=<cismap:height>&srs=cismap:srs>&format=image/png" // NOI18N
+                            + "&transparent=true&layers=" + layername;                                        // NOI18N
+            }
+        } else {
+            url = proj.getWmsGetMapTemplateUrl().replaceAll("<layername>", layername);                        // NOI18N
+        }
+
+        return url;
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw    DOCUMENT ME!
+     * @param   proj  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeViews(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+        writeTinView(bw, proj);
+        writeBEView(bw, proj);
+        writeMaxViews(bw, proj);
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw    DOCUMENT ME!
+     * @param   proj  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeTinView(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+        //J-
+        bw.write("CREATE VIEW " + createTinName(proj) + " AS "
+                    + "SELECT id, dreieck AS geometrie FROM oab_daten_tin WHERE fk_oab_zustand_massnahme = "
+                    + "(SELECT id FROM oab_zustand_massnahme WHERE \"name\" = '" + proj.getName() + "' AND abs(projekt) = "
+                    + "(SELECT id FROM oab_projekt WHERE \"name\" = '" + proj.getProjectName() + "' AND abs(gewaessereinzugsgebiet) = "
+                    + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" + proj.getCatchmentName() + "')));");
+        //J+
+        bw.newLine();
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   proj  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createTinName(final WuppGeoCPMProject proj) {
+        return "oab_tin_" + convert(proj.getProjectName()) + "_" + convert(proj.getName()); // NOI18N
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   proj  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createBEName(final WuppGeoCPMProject proj) {
+        return "oab_bruchkanten_" + convert(proj.getProjectName()) + "_" + convert(proj.getName()); // NOI18N
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   proj       DOCUMENT ME!
+     * @param   annuality  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createMaxName(final WuppGeoCPMProject proj, final int annuality) {
+        return "oab_max_wasser_" + convert(proj.getProjectName()) + "_" + convert(proj.getName()) + "_t" + annuality; // NOI18N
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw    DOCUMENT ME!
+     * @param   proj  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeBEView(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+        //J-
+        bw.write("CREATE VIEW " + createBEName(proj) + " AS "
+                    + "SELECT id, bruchkante AS geometrie FROM oab_daten_bruchkante WHERE fk_oab_zustand_massnahme = "
+                    + "(SELECT id FROM oab_zustand_massnahme WHERE \"name\" = '" + proj.getName() + "' AND abs(projekt) = "
+                    + "(SELECT id FROM oab_projekt WHERE \"name\" = '" + proj.getProjectName() + "' AND abs(gewaessereinzugsgebiet) = "
+                    + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" + proj.getCatchmentName() + "')));");
+        //J+
         bw.newLine();
     }
 
@@ -129,9 +298,115 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      *
      * @throws  IOException  DOCUMENT ME!
      */
-    private void writeBerechnung(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+    private void writeMaxViews(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
         for (final GeoCPMResult result : proj.getResults()) {
-            bw.write("INSERT INTO oab_berechnung (jaehrlichkeit) VALUES (" + result.getAnnuality() + ");"); // NOI18N
+            //J-
+            bw.write("CREATE VIEW " + createMaxName(proj, result.getAnnuality()) + " AS "
+                    + "SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t "
+                    + "LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin "
+                    + "WHERE w.fk_oab_berechnung = "
+                        + "(SELECT id FROM oab_berechnung WHERE jaehrlichkeit = " + result.getAnnuality() + " "
+                        + "AND abs(zustand_massnahme) = "
+                            + "(SELECT id FROM oab_zustand_massnahme WHERE \"name\" = '" + proj.getName() + "' AND abs(projekt) = "
+                                + "(SELECT id FROM oab_projekt WHERE \"name\" = '" + proj.getProjectName() + "' AND abs(gewaessereinzugsgebiet) = "
+                                    + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" + proj.getCatchmentName() + "')))) "
+                    + "AND t.fk_oab_zustand_massnahme = "
+                        + "(SELECT id FROM oab_zustand_massnahme WHERE \"name\" = '" + proj.getName() + "' AND abs(projekt) = "
+                            + "(SELECT id FROM oab_projekt WHERE \"name\" = '" + proj.getProjectName() + "' AND abs(gewaessereinzugsgebiet) = "
+                                + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" + proj.getCatchmentName() + "')));");
+            //J+
+            bw.newLine();
+        }
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw    DOCUMENT ME!
+     * @param   proj  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeTimeViews(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+        // TODO: discuss the way to go
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   name  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    @SuppressWarnings("fallthrough")
+    private String convert(final String name) {
+        final StringBuilder sb = new StringBuilder(name);
+        for (int i = 0; i < sb.length(); ++i) {
+            switch (sb.charAt(i)) {
+                // äÄ
+                case '\u00c4':
+                case '\u00e4': {
+                    sb.replace(i, i + 1, "ae");
+                    ++i;
+                    break;
+                }
+                // öÖ
+                case '\u00d6':
+                case '\u00f6': {
+                    sb.replace(i, i + 1, "oe");
+                    ++i;
+                    break;
+                }
+                // üÜ
+                case '\u00dc':
+                case '\u00fc': {
+                    sb.replace(i, i + 1, "ue");
+                    ++i;
+                    break;
+                }
+                // ß
+                case '\u00df': {
+                    sb.replace(i, i + 1, "ss");
+                    break;
+                }
+                // <SPACE>
+                case '\u0020': {
+                    sb.setCharAt(i, '_');
+                    break;
+                }
+            }
+        }
+
+        return sb.toString().toLowerCase().replaceAll("[^a-z0-9_]", "");
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw    DOCUMENT ME!
+     * @param   proj  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeBerechnung(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
+        final String capUrl = createWMSCapabilitiesUrl(proj);
+        for (final GeoCPMResult result : proj.getResults()) {
+            final String maxLayername = createMaxName(proj, result.getAnnuality());
+            // TODO: add zr_wasser
+            bw.write("INSERT INTO oab_berechnung ("
+                        + "jaehrlichkeit, "
+                        + "zustand_massnahme, "
+                        + "max_wasser_cap, "
+                        + "max_wasser_layer_name, "
+                        + "max_wasser_simple_getmap"
+                        + ") VALUES ("
+                        + result.getAnnuality() + ", "
+                        + "(SELECT max(id) * -1 FROM oab_zustand_massnahme), "
+                        + "'" + capUrl + "', "
+                        + "'" + maxLayername + "', "
+                        + "'" + createWMSGetMapUrl(maxLayername, proj) + "'"
+                        + ");"); // NOI18N
+
             bw.newLine();
         }
     }
@@ -151,7 +426,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
             bufferBreakingEdge(bw, t, breakingEdges);
 
-            writeWaterResults(bw, proj.getResults());
+            writeWaterResults(bw, t, proj.getResults());
         }
 
         writeBreakingEdgeBuffer(bw, breakingEdges);
@@ -248,16 +523,30 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      * DOCUMENT ME!
      *
      * @param   bw       DOCUMENT ME!
+     * @param   t        DOCUMENT ME!
      * @param   results  DOCUMENT ME!
      *
-     * @throws  IOException  DOCUMENT ME!
+     * @throws  IOException            DOCUMENT ME!
+     * @throws  IllegalStateException  DOCUMENT ME!
      */
-    private void writeWaterResults(final BufferedWriter bw, final Collection<GeoCPMResult> results) throws IOException {
+    private void writeWaterResults(final BufferedWriter bw, final Triangle t, final Collection<GeoCPMResult> results)
+            throws IOException {
         for (final GeoCPMResult gr : results) {
-            for (final Result r : gr.getResults()) {
-                writeWaterMax(bw, gr.getAnnuality(), r);
-                writeWaterTime(bw, gr.getAnnuality(), r);
+            Result r = null;
+            final Iterator<Result> it = gr.getResults().iterator();
+            while (it.hasNext() && (r == null)) {
+                final Result res = it.next();
+                if (res.getId() == t.getId()) {
+                    r = res;
+                }
             }
+
+            if (r == null) {
+                throw new IllegalStateException("cannot find result for triangle: " + t); // NOI18N
+            }
+
+            writeWaterMax(bw, gr.getAnnuality(), r);
+            writeWaterTime(bw, gr.getAnnuality(), r);
         }
     }
 

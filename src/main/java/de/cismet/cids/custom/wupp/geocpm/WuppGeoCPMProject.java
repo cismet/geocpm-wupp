@@ -28,10 +28,14 @@ public class WuppGeoCPMProject extends GeoCPMProject {
 
     private File zustandMassnahmeSqlFile;
     private Type type;
+    private String catchmentName;
     private String projectName;
     private String projectDescription;
     private String dbDriver;
     private String dbUser;
     private String dbPass;
     private String dbConn;
+    private String wmsBaseUrl;
+    private String wmsCapabilitiesUrl;
+    private String wmsGetMapTemplateUrl;
 }
