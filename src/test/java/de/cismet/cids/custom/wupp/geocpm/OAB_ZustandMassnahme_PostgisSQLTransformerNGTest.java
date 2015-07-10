@@ -8,8 +8,10 @@ import de.cismet.geocpm.api.transform.GeoCPMEinTriangleToMemoryTransformer;
 import de.cismet.geocpm.api.transform.GeoCPMMaxToMemoryTransformer;
 import de.cismet.geocpm.api.transform.GeoCPMResultElementsToMemoryTransformer;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +105,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         p.setDescription("projectdescription1");
         p.setCatchmentName("catchment1");
         p.setWmsBaseUrl("https://to.be/changed");
+        p.setOutputFolder(new File(System.getProperty("java.io.tmpdir")));
         
         InputStreamReader r = new InputStreamReader(
                 getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPM.ein"));
@@ -156,7 +159,15 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         
         t.transform(p);
         assertNotNull(p.getZustandMassnahmeSqlFile());
-        System.out.println(p.getZustandMassnahmeSqlFile());
+        final BufferedReader expR = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("oab_zustandmassnahme_zustname1.sql")));
+        final BufferedReader resR = new BufferedReader(new FileReader(p.getZustandMassnahmeSqlFile()));
+        
+        String line1;
+        String line2;
+        while((line1 = expR.readLine()) != null) {
+            line2 = resR.readLine();
+            assertEquals(line2, line1);
+        }
     }
 
 }
