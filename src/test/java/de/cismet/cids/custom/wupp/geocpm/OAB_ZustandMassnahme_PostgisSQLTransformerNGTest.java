@@ -102,7 +102,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         
         p.setName("zustname1");
         p.setDescription("zustdescription1");
-        p.setProjectName("projectname1");
+        p.setProjectName("projectname123456789");
         p.setDescription("projectdescription1");
         p.setCatchmentName("catchment1");
         p.setWmsBaseUrl("https://to.be/changed");

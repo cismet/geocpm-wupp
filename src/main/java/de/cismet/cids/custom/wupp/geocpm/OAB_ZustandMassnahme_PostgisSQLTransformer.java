@@ -358,7 +358,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      * @return  DOCUMENT ME!
      */
     private String createBEName(final WuppGeoCPMProject proj) {
-        final StringBuilder sb = new StringBuilder("oab_bruchkanten_"); // NOI18N
+        final StringBuilder sb = new StringBuilder("oab_bk_"); // NOI18N
         sb.append(convert(proj.getProjectName()));
         sb.append('_');
         sb.append(convert(proj.getName()));
@@ -375,11 +375,11 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      * @return  DOCUMENT ME!
      */
     private String createMaxName(final WuppGeoCPMProject proj, final int annuality) {
-        final StringBuilder sb = new StringBuilder("oab_max_wasser_"); // NOI18N
+        final StringBuilder sb = new StringBuilder("oab_mw_"); // NOI18N
         sb.append(convert(proj.getProjectName()));
         sb.append('_');
         sb.append(convert(proj.getName()));
-        sb.append("_t");                                               // NOI18N
+        sb.append("_t");                                       // NOI18N
         sb.append(annuality);
 
         return sb.toString();
@@ -486,7 +486,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             }
         }
 
-        return sb.toString().toLowerCase().replaceAll("[^a-z0-9_]", "");
+        final String conv = sb.toString().toLowerCase().replaceAll("[^a-z0-9_]", ""); // NOI18N
+
+        return (conv.length() > 16) ? conv.substring(0, 16) : conv;
     }
 
     /**
