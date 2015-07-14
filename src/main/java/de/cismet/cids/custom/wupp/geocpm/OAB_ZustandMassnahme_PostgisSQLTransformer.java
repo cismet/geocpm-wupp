@@ -174,7 +174,6 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
     @Override
     public GeoCPMProject transform(final GeoCPMProject obj) {
-        final long start = System.currentTimeMillis();
         // we rely on the framework to call accept
         final WuppGeoCPMProject proj = (WuppGeoCPMProject)obj;
 
@@ -220,7 +219,6 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             }
             throw new TransformException(message, ex);
         }
-        System.out.println("transform took: " + ((System.currentTimeMillis() - start) / 1000));
 
         return proj;
     }
@@ -527,16 +525,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      */
     private void writeData(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
         final List<BELine> breakingEdges = new ArrayList<>();
-        long l = 0;
-        System.out.println("x 0");
-        long start = System.currentTimeMillis();
         for (final Triangle t : proj.getTriangles()) {
-            l++;
-            if ((l % 100000) == 0) {
-                final long n = System.currentTimeMillis();
-                System.out.println("x (" + l + ") " + ((n - start) / 1000));
-                start = n;
-            }
             writeTriangle(bw, t);
 
             bufferBreakingEdge(bw, t, breakingEdges);

@@ -50,16 +50,18 @@ public class Tools {
             final ZipEntry ze = en.nextElement();
             final File outFile = new File(targetDir, ze.getName());
 
-            if (!outFile.getParentFile().mkdirs()) {
-                throw new IOException("cannot create directory structure: " + outFile); // NOI18N
-            }
-
-            try(final FileOutputStream fos = new FileOutputStream(outFile)) {
-                try(final InputStream is = zipFile.getInputStream(ze)) {
-                    final byte[] buffer = new byte[8192];
-                    int len;
-                    while ((len = is.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
+            if (ze.isDirectory()) {
+                if (!outFile.mkdirs()) {
+                    throw new IOException("cannot create directory structure: " + outFile); // NOI18N
+                }
+            } else {
+                try(final FileOutputStream fos = new FileOutputStream(outFile)) {
+                    try(final InputStream is = zipFile.getInputStream(ze)) {
+                        final byte[] buffer = new byte[8192];
+                        int len;
+                        while ((len = is.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
                     }
                 }
             }

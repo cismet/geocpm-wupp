@@ -7,6 +7,7 @@ import de.cismet.geocpm.api.transform.GeoCPMEinPointToMemoryTransformer;
 import de.cismet.geocpm.api.transform.GeoCPMEinTriangleToMemoryTransformer;
 import de.cismet.geocpm.api.transform.GeoCPMMaxToMemoryTransformer;
 import de.cismet.geocpm.api.transform.GeoCPMResultElementsToMemoryTransformer;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -107,7 +108,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         p.setWmsBaseUrl("https://to.be/changed");
         p.setOutputFolder(new File(System.getProperty("java.io.tmpdir")));
         
-        InputStreamReader r = new InputStreamReader(
+        BufferedInputStream r = new BufferedInputStream(
                 getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPM.ein"));
         File f1 = File.createTempFile("test", "geocpmtests");
         f1.deleteOnExit();
@@ -119,7 +120,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         }
         o.flush();
         
-        r = new InputStreamReader(
+        r = new BufferedInputStream(
                 getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPMMax.aus"));
         File f2 = File.createTempFile("test", "geocpmtests");
         f2.deleteOnExit();
@@ -130,7 +131,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         }
         o.flush();
         
-        r = new InputStreamReader(
+        r = new BufferedInputStream(
                 getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPMResultsElements.aus"));
         File f3 = File.createTempFile("test", "geocpmtests");
         f3.deleteOnExit();

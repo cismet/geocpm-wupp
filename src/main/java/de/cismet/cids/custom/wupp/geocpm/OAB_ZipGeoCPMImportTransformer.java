@@ -40,6 +40,7 @@ public class OAB_ZipGeoCPMImportTransformer implements GeoCPMImportTransformer {
                     zip.close();
                     accept = true;
                 } catch (final IOException ex) {
+                    ex.printStackTrace();
                     // noop
                 }
             }
@@ -55,7 +56,7 @@ public class OAB_ZipGeoCPMImportTransformer implements GeoCPMImportTransformer {
             final File extractFolder = new File(System.getProperty("java.io.tmpdir"),
                     "geocpm_extract_"
                             + System.currentTimeMillis());
-            if (extractFolder.mkdir()) {
+            if (!extractFolder.mkdir()) {
                 throw new TransformException("cannot create extract folder: " + extractFolder);
             }
 
