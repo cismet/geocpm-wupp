@@ -8,9 +8,11 @@
 package de.cismet.cids.custom.wupp.geocpm;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import java.util.ArrayList;
@@ -24,8 +26,6 @@ import de.cismet.geocpm.api.transform.GeoCPMImportTransformer;
 import de.cismet.geocpm.api.transform.TransformException;
 
 import de.cismet.tools.FileUtils;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 
 /**
  * DOCUMENT ME!
@@ -44,7 +44,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
     public static final String IMPORT_INFO_WMS_BASE_URL = "geocpm.projekt.wms.baseurl";         // NOI18N
     public static final String IMPORT_INFO_WMS_CAP = "geocpm.projekt.wms.capabiliesurl";        // NOI18N
     public static final String IMPORT_INFO_WMS_GETMAP = "geocpm.projekt.wms.getmaptemplateurl"; // NOI18N
-    public static final String IMPORT_INFO_CONTRACTOR = "geocpm.projekt.auftragnehmer"; // NOI18N
+    public static final String IMPORT_INFO_CONTRACTOR = "geocpm.projekt.auftragnehmer";         // NOI18N
 
     public static final String PROJECT_INFO_FILENAME = "zm.info";                    // NOI18N
     public static final String PROJECT_INFO_NAME = "geocpm.projekt.zm.name";         // NOI18N
@@ -52,6 +52,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
     public static final String PROJECT_INFO_TYPE = "geocpm.projekt.zm.typ";          // NOI18N
 
     private static final String ANNUALITY_FOLDER_REGEX = "T\\d+"; // NOI18N
+    public static final String IMPORT_OUT_DIR = "import_out";
 
     //~ Methods ----------------------------------------------------------------
 
@@ -77,27 +78,28 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
         // we rely on the framework to call accept
         final File basedir = (File)obj;
         final File infoFile = new File(basedir, IMPORT_INFO_FILENAME);
-        
+
         final File outputFolder = new File(basedir, IMPORT_OUT_DIR);
-        if(!outputFolder.exists() && !outputFolder.mkdir()) {
+        if (!outputFolder.exists() && !outputFolder.mkdir()) {
             throw new TransformException("cannot create output folder: " + outputFolder); // NOI18N
         }
-        
+
         final List<GeoCPMProject> projects = new ArrayList<>();
 
         for (final File projFile : basedir.listFiles(new FileFilter() {
 
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() && !pathname.getName().equals(IMPORT_OUT_DIR);
-            }
-        })) {
+                            @Override
+                            public boolean accept(final File pathname) {
+                                return pathname.isDirectory() && !pathname.getName().equals(IMPORT_OUT_DIR);
+                            }
+                        })
+        ) {
             final WuppGeoCPMProject proj = new WuppGeoCPMProject();
             proj.setOutputFolder(outputFolder);
 
             setCommonInfo(proj, infoFile);
             setProjectInfo(proj, projFile);
-            
+
             writeProjectSQL(proj);
 
             final File[] annualityFolders = projFile.listFiles(new FileFilter() {
@@ -158,24 +160,31 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
 
         return projects;
     }
-    public static final String IMPORT_OUT_DIR = "import_out";
-    
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   proj  DOCUMENT ME!
+     *
+     * @throws  TransformException  DOCUMENT ME!
+     */
     private void writeProjectSQL(final WuppGeoCPMProject proj) {
-        final File file = new File(proj.getOutputFolder(), "project.sql");// NOI18N
-        if(!file.exists()) {
+        final File file = new File(proj.getOutputFolder(), "project.sql");       // NOI18N
+        if (!file.exists()) {
             try(final BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-                bw.write("INSERT INTO oab_projekt ("// NOI18N
-                        + "\"name\", "// NOI18N
-                        + "beschreibung, "// NOI18N
-                        + "auftragnehmer, "// NOI18N
-                        + "gewaessereinzugsgebiet"// NOI18N
-                        + ") VALUES ("// NOI18N
-                        + "'" + proj.getProjectName() + "', "// NOI18N
-                        + "'" + proj.getProjectDescription()+ "', "// NOI18N
-                        + "'" + proj.getContractor() + "', "// NOI18N
-                        + "(SELECT id * -1 FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" + proj.getCatchmentName() + "')"// NOI18N
-                        + ");");// NOI18N
-            } catch(final IOException ex) {
+                bw.write("INSERT INTO oab_projekt ("                             // NOI18N
+                            + "\"name\", "                                       // NOI18N
+                            + "beschreibung, "                                   // NOI18N
+                            + "auftragnehmer, "                                  // NOI18N
+                            + "gewaessereinzugsgebiet"                           // NOI18N
+                            + ") VALUES ("                                       // NOI18N
+                            + "'" + proj.getProjectName() + "', "                // NOI18N
+                            + "'" + proj.getProjectDescription() + "', "         // NOI18N
+                            + "'" + proj.getContractor() + "', "                 // NOI18N
+                            + "(SELECT id * -1 FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '"
+                            + proj.getCatchmentName() + "')"                     // NOI18N
+                            + ");");                                             // NOI18N
+            } catch (final IOException ex) {
                 throw new TransformException("cannot write project sql: " + ex); // NOI18N
             }
         }
@@ -279,7 +288,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
      * @param  folderName  DOCUMENT ME!
      */
     private void setProjectType(final WuppGeoCPMProject proj, final String propType, final String folderName) {
-        String projectType = propType == null ? "" : propType;
+        String projectType = (propType == null) ? "" : propType;
         try {
             proj.setType(Type.valueOf(projectType));
         } catch (final IllegalArgumentException ex) {
