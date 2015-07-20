@@ -56,6 +56,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     private final MessageFormat triangleWktFormat;
     private final MessageFormat beWkt2Format;
     private final MessageFormat beWkt3Format;
+    private final MessageFormat boundingGeomProjFormat;
 
     private final String boundingGeomInsert;
     private final String boundingGeomUpdate;
@@ -67,19 +68,19 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      */
     public OAB_ZustandMassnahme_PostgisSQLTransformer() {
         zustandMassnahmeFormat = new MessageFormat(
-                "INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, tin_simple_getmap, bruchkanten_cap, bruchkanten_layer_name, bruchkanten_simple_getmap) VALUES ((SELECT id * -1 FROM oab_projekt WHERE \"name\" = ''{0}'' AND abs(gewaessereinzugsgebiet) = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}'')), (SELECT id FROM oab_zm_typ WHERE name = ''{2}''), ''{3}'', ''{4}'', ''{5}'', ''{6}'', ''{7}'', ''{8}'', ''{9}'', ''{10}'');");
+                "INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, tin_simple_getmap, bruchkanten_cap, bruchkanten_layer_name, bruchkanten_simple_getmap) VALUES ((SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}'')), (SELECT id FROM oab_zm_typ WHERE name = ''{2}''), ''{3}'', ''{4}'', ''{5}'', ''{6}'', ''{7}'', ''{8}'', ''{9}'', ''{10}'');");
 
         tinViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT id, dreieck AS geometrie FROM oab_daten_tin WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND abs(projekt) = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND abs(gewaessereinzugsgebiet) = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));");
+                "CREATE VIEW {0} AS SELECT id, dreieck AS geometrie FROM oab_daten_tin WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));");
 
         beViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT id, bruchkante AS geometrie FROM oab_daten_bruchkante WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND abs(projekt) = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND abs(gewaessereinzugsgebiet) = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));");
+                "CREATE VIEW {0} AS SELECT id, bruchkante AS geometrie FROM oab_daten_bruchkante WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));");
 
         maxViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin WHERE w.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND abs(zustand_massnahme) = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND abs(projekt) = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND abs(gewaessereinzugsgebiet) = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND abs(projekt) = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND abs(gewaessereinzugsgebiet) = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));");
+                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin WHERE w.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));");
 
         berechnungFormat = new MessageFormat(
-                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, max_wasser_simple_getmap) VALUES ({0}, (SELECT max(id) * -1 FROM oab_zustand_massnahme), ''{1}'', ''{2}'', ''{3}'');");
+                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, max_wasser_simple_getmap) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'', ''{3}'');");
 
         triangleFormat = new MessageFormat(
                 "INSERT INTO oab_daten_tin (fk_oab_zustand_massnahme, dreieck) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));");
@@ -146,6 +147,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
         boundingGeomUpdate =
             "UPDATE oab_zustand_massnahme SET umschreibende_geometrie = (SELECT max(id) FROM geom) WHERE id = (SELECT max(id) FROM oab_zustand_massnahme);";
+
+        boundingGeomProjFormat = new MessageFormat(
+                "UPDATE oab_projekt SET umschreibende_geometrie = (SELECT max(id) FROM geom) WHERE id = (SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}''));");
     }
 
     //~ Methods ----------------------------------------------------------------
@@ -200,7 +204,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             bw.newLine();
             bw.newLine();
 
-            writeBoundingGeometry(bw);
+            writeBoundingGeometry(proj, bw);
             bw.newLine();
             bw.newLine();
 
@@ -677,16 +681,31 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     /**
      * DOCUMENT ME!
      *
-     * @param   bw  DOCUMENT ME!
+     * @param   proj  DOCUMENT ME!
+     * @param   bw    DOCUMENT ME!
      *
      * @throws  IOException  DOCUMENT ME!
      */
-    private void writeBoundingGeometry(final BufferedWriter bw) throws IOException {
+    private void writeBoundingGeometry(final WuppGeoCPMProject proj, final BufferedWriter bw) throws IOException {
         bw.write(boundingGeomInsert);
         bw.newLine();
 
         bw.write(boundingGeomUpdate);
         bw.newLine();
+
+        if (proj.getType() == Type.Ist) {
+            bw.newLine();
+            // writing the geometry again for the project
+            bw.write(boundingGeomInsert);
+            bw.newLine();
+
+            final Object[] params = new Object[] {
+                    proj.getProjectName(),
+                    proj.getCatchmentName()
+                };
+            bw.write(boundingGeomProjFormat.format(params));
+            bw.newLine();
+        }
     }
 
     /**
