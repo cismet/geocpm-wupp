@@ -161,7 +161,7 @@ public class OAB_ZipGeoCPMImportTransformerNGTest {
         assertEquals(w.getCatchmentName(), "cm1");
         assertEquals(w.getContractor(), "con1");
         assertEquals(w.getOutputFolder().getAbsolutePath(), 
-                new File(extractDir, OAB_FolderGeoCPMImportTransformer.IMPORT_OUT_DIR).getAbsolutePath());
+                new File(extractDir, WuppGeoCPMConstants.IMPORT_OUT_DIR).getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
         
@@ -190,7 +190,7 @@ public class OAB_ZipGeoCPMImportTransformerNGTest {
         assertEquals(w.getCatchmentName(), "cm1");
         assertEquals(w.getContractor(), "con1");
         assertEquals(w.getOutputFolder().getAbsolutePath(), 
-                new File(extractDir, OAB_FolderGeoCPMImportTransformer.IMPORT_OUT_DIR).getAbsolutePath());
+                new File(extractDir, WuppGeoCPMConstants.IMPORT_OUT_DIR).getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
     }

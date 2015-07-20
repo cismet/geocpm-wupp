@@ -68,7 +68,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      */
     public OAB_ZustandMassnahme_PostgisSQLTransformer() {
         zustandMassnahmeFormat = new MessageFormat(
-                "INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, tin_simple_getmap, bruchkanten_cap, bruchkanten_layer_name, bruchkanten_simple_getmap) VALUES ((SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}'')), (SELECT id FROM oab_zm_typ WHERE name = ''{2}''), ''{3}'', ''{4}'', ''{5}'', ''{6}'', ''{7}'', ''{8}'', ''{9}'', ''{10}'');");
+                "INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, bruchkanten_cap, bruchkanten_layer_name) VALUES ((SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}'')), (SELECT id FROM oab_zm_typ WHERE name = ''{2}''), ''{3}'', ''{4}'', ''{5}'', ''{6}'', ''{7}'', ''{8}'');");
 
         tinViewFormat = new MessageFormat(
                 "CREATE VIEW {0} AS SELECT id, dreieck AS geometrie FROM oab_daten_tin WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));");
@@ -80,7 +80,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
                 "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin WHERE w.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));");
 
         berechnungFormat = new MessageFormat(
-                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, max_wasser_simple_getmap) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'', ''{3}'');");
+                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'');");
 
         triangleFormat = new MessageFormat(
                 "INSERT INTO oab_daten_tin (fk_oab_zustand_massnahme, dreieck) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));");
@@ -249,10 +249,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
                 proj.getName(),
                 capUrl,
                 tinLayername,
-                createWMSGetMapUrl(tinLayername, proj),
                 capUrl,
-                beLayername,
-                createWMSGetMapUrl(beLayername, proj)
+                beLayername
             };
 
         bw.write(zustandMassnahmeFormat.format(params));
@@ -274,31 +272,6 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             url = proj.getWmsBaseUrl() + "?service=wms&version=1.1.1&request=GetCapabilities"; // NOI18N
         } else {
             url = "<n/a>";                                                                     // NOI18N
-        }
-
-        return url;
-    }
-
-    /**
-     * DOCUMENT ME!
-     *
-     * @param   layername  DOCUMENT ME!
-     * @param   proj       DOCUMENT ME!
-     *
-     * @return  DOCUMENT ME!
-     */
-    private String createWMSGetMapUrl(final String layername, final WuppGeoCPMProject proj) {
-        final String url;
-        if (proj.getWmsGetMapTemplateUrl() == null) {
-            if (proj.getWmsBaseUrl() == null) {
-                url = "<n/a>";                                                                                // NOI18N
-            } else {
-                url = proj.getWmsBaseUrl() + "?version=1.1.1&request=GetMap&bbox=<cismap:boundingBox>"        // NOI18N
-                            + "&width=<cismap:width>&height=<cismap:height>&srs=cismap:srs>&format=image/png" // NOI18N
-                            + "&transparent=true&layers=" + layername;                                        // NOI18N
-            }
-        } else {
-            url = proj.getWmsGetMapTemplateUrl().replaceAll("<layername>", layername);                        // NOI18N
         }
 
         return url;
@@ -511,8 +484,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             final Object[] params = new Object[] {
                     result.getAnnuality(),
                     capUrl,
-                    maxLayername,
-                    createWMSGetMapUrl(maxLayername, proj)
+                    maxLayername
                 };
 
             bw.write(berechnungFormat.format(params));

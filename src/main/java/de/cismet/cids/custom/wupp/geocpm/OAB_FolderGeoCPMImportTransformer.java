@@ -37,36 +37,53 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
 
     //~ Static fields/initializers ---------------------------------------------
 
-    public static final String IMPORT_INFO_FILENAME = "projekt.info";                           // NOI18N
-    public static final String IMPORT_INFO_CATCHMENT_NAME = "geocpm.projekt.gep.name";          // NOI18N
-    public static final String IMPORT_INFO_NAME = "geocpm.projekt.name";                        // NOI18N
-    public static final String IMPORT_INFO_DESC = "geocpm.projekt.beschreibung";                // NOI18N
-    public static final String IMPORT_INFO_WMS_BASE_URL = "geocpm.projekt.wms.baseurl";         // NOI18N
-    public static final String IMPORT_INFO_WMS_CAP = "geocpm.projekt.wms.capabiliesurl";        // NOI18N
-    public static final String IMPORT_INFO_WMS_GETMAP = "geocpm.projekt.wms.getmaptemplateurl"; // NOI18N
-    public static final String IMPORT_INFO_CONTRACTOR = "geocpm.projekt.auftragnehmer";         // NOI18N
-
-    public static final String PROJECT_INFO_FILENAME = "zm.info";                    // NOI18N
-    public static final String PROJECT_INFO_NAME = "geocpm.projekt.zm.name";         // NOI18N
-    public static final String PROJECT_INFO_DESC = "geocpm.projekt.zm.beschreibung"; // NOI18N
-    public static final String PROJECT_INFO_TYPE = "geocpm.projekt.zm.typ";          // NOI18N
-
     private static final String ANNUALITY_FOLDER_REGEX = "T\\d+"; // NOI18N
-    public static final String IMPORT_OUT_DIR = "import_out";
 
     //~ Methods ----------------------------------------------------------------
 
     @Override
     public boolean accept(final Object obj) {
-        final boolean accept = false;
+        boolean accept = true;
 
         if (obj instanceof File) {
             final File file = (File)obj;
             if (file.isDirectory() && file.canRead()) {
-                final File meta = new File(file, IMPORT_INFO_FILENAME);
+                File meta = new File(file, WuppGeoCPMConstants.IMPORT_INFO_FILENAME);
                 if (meta.exists() && meta.canRead()) {
-                    return file.listFiles(new FileUtils.DirectoryFilter()).length > 0;
+                    final File[] projects = file.listFiles(new FileFilter() {
+
+                                @Override
+                                public boolean accept(final File pathname) {
+                                    return pathname.isDirectory()
+                                                && !pathname.getName().equals(WuppGeoCPMConstants.IMPORT_OUT_DIR);
+                                }
+                            });
+
+                    if (projects.length > 0) {
+                        for (final File projDir : projects) {
+                            meta = new File(projDir, WuppGeoCPMConstants.PROJECT_INFO_FILENAME);
+                            if (meta.exists() && meta.canRead()) {
+                                for (final File calcDir : projDir.listFiles(new FileUtils.DirectoryFilter())) {
+                                    meta = new File(calcDir, WuppGeoCPMConstants.CALC_INFO_FILENAME);
+
+                                    if (meta.exists() && meta.canRead()) {
+                                        accept = calcDir.listFiles(new FileUtils.DirectoryFilter()).length == 1;
+                                    } else {
+                                        accept = false;
+                                    }
+                                }
+                            } else {
+                                accept = false;
+                            }
+                        }
+                    } else {
+                        accept = false;
+                    }
+                } else {
+                    accept = false;
                 }
+            } else {
+                accept = false;
             }
         }
 
@@ -77,9 +94,9 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
     public Collection<GeoCPMProject> transform(final Object obj) {
         // we rely on the framework to call accept
         final File basedir = (File)obj;
-        final File infoFile = new File(basedir, IMPORT_INFO_FILENAME);
+        final File infoFile = new File(basedir, WuppGeoCPMConstants.IMPORT_INFO_FILENAME);
 
-        final File outputFolder = new File(basedir, IMPORT_OUT_DIR);
+        final File outputFolder = new File(basedir, WuppGeoCPMConstants.IMPORT_OUT_DIR);
         if (!outputFolder.exists() && !outputFolder.mkdir()) {
             throw new TransformException("cannot create output folder: " + outputFolder); // NOI18N
         }
@@ -90,7 +107,8 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
 
                             @Override
                             public boolean accept(final File pathname) {
-                                return pathname.isDirectory() && !pathname.getName().equals(IMPORT_OUT_DIR);
+                                return pathname.isDirectory()
+                                    && !pathname.getName().equals(WuppGeoCPMConstants.IMPORT_OUT_DIR);
                             }
                         })
         ) {
@@ -117,22 +135,26 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             boolean first = true;
             final List<GeoCPMResult> results = new ArrayList<>(annualityFolders.length);
             for (final File annualityFolder : annualityFolders) {
-                final File geocpmFile = new File(annualityFolder, "GeoCPM.ein");           // NOI18N
-                final File geocpmSubinfo = new File(annualityFolder, "GeoCPMSubInfo.aus"); // NOI18N
+                final File geocpmFile = new File(annualityFolder, WuppGeoCPMConstants.GEOCPM_EIN_FILENAME);
+                final File geocpmSubinfo = new File(annualityFolder, WuppGeoCPMConstants.GEOCPM_SUBINFO_AUS_FILENAME);
+                final File calcinfo = new File(annualityFolder, WuppGeoCPMConstants.CALC_INFO_FILENAME);
 
                 checkAccessible(geocpmFile);
                 checkAccessible(geocpmSubinfo);
+                checkAccessible(calcinfo);
 
                 final File[] resultDirs = annualityFolder.listFiles(new FileUtils.DirectoryFilter());
                 if (resultDirs.length == 0) {
-                    throw new TransformException("no result dir found: " + annualityFolder);   // NOI18N
+                    throw new TransformException("no result dir found: " + annualityFolder);            // NOI18N
                 } else if (resultDirs.length > 1) {
-                    throw new TransformException("too many result dirs, only single result supported: "
-                                + annualityFolder);                                            // NOI18N
+                    throw new TransformException("too many result dirs, only single result supported: " // NOI18N
+                                + annualityFolder);
                 } else {
-                    final File geocpmInfo = new File(resultDirs[0], "GeoCPMInfo.aus");         // NOI18N
-                    final File geocpmMMax = new File(resultDirs[0], "GeoCPMMax.aus");          // NOI18N
-                    final File geocpmResults = new File(resultDirs[0], "ResultsElements.aus"); // NOI18N
+                    final File geocpmInfo = new File(resultDirs[0], WuppGeoCPMConstants.GEOCPM_INFO_AUS_FILENAME);
+                    final File geocpmMMax = new File(resultDirs[0], WuppGeoCPMConstants.GEOCPM_MAX_AUS_FILENAME);
+                    final File geocpmResults = new File(
+                            resultDirs[0],
+                            WuppGeoCPMConstants.RESULTSELEMENTS_AUS_FILENAME);
 
                     checkAccessible(geocpmInfo);
                     checkAccessible(geocpmMMax);
@@ -143,11 +165,14 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                         first = false;
                     }
 
-                    final GeoCPMResult r = new GeoCPMResult(Integer.parseInt(annualityFolder.getName().substring(1)));
+                    final WuppGeoCPMResult r = new WuppGeoCPMResult(Integer.parseInt(
+                                annualityFolder.getName().substring(1)));
                     r.setGeocpmInfo(geocpmInfo);
                     r.setGeocpmSubinfo(geocpmSubinfo);
                     r.setGeocpmMax(geocpmMMax);
                     r.setGeocpmResultElements(geocpmResults);
+
+                    setCalcInfo(r, calcinfo);
 
                     results.add(r);
                 }
@@ -164,28 +189,86 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
     /**
      * DOCUMENT ME!
      *
+     * @param   result    DOCUMENT ME!
+     * @param   calcInfo  DOCUMENT ME!
+     *
+     * @throws  TransformException  DOCUMENT ME!
+     */
+    private void setCalcInfo(final WuppGeoCPMResult result, final File calcInfo) {
+        final Properties calcProps = new Properties();
+
+        try(final BufferedReader br = new BufferedReader(new FileReader(calcInfo))) {
+            calcProps.load(br);
+        } catch (final IOException ex) {
+            throw new TransformException("cannot read calculation info file", ex); // NOI18N
+        }
+
+        final String tsStartTimeProp = calcProps.getProperty(WuppGeoCPMConstants.CALC_INFO_TS_STARTTIME);
+        if ((tsStartTimeProp == null) || tsStartTimeProp.isEmpty()) {
+            throw new TransformException("cannot find ts start time: " + WuppGeoCPMConstants.CALC_INFO_TS_STARTTIME); // NOI18N
+        }
+
+        final String tsEndTimeProp = calcProps.getProperty(WuppGeoCPMConstants.CALC_INFO_TS_ENDTIME);
+        if ((tsEndTimeProp == null) || tsEndTimeProp.isEmpty()) {
+            throw new TransformException("cannot find ts end time: " + WuppGeoCPMConstants.CALC_INFO_TS_ENDTIME); // NOI18N
+        }
+
+        final String tsNoOfStepsProp = calcProps.getProperty(WuppGeoCPMConstants.CALC_INFO_TS_NO_OF_STEPS);
+        if ((tsNoOfStepsProp == null) || tsNoOfStepsProp.isEmpty()) {
+            throw new TransformException("cannot find ts noOfSteps: " + WuppGeoCPMConstants.CALC_INFO_TS_NO_OF_STEPS); // NOI18N
+        }
+
+        final int tsStartTime;
+        final int tsEndTime;
+        final int tsNoOfSteps;
+        try {
+            tsStartTime = Integer.parseInt(tsStartTimeProp);
+            tsEndTime = Integer.parseInt(tsEndTimeProp);
+            tsNoOfSteps = Integer.parseInt(tsNoOfStepsProp);
+        } catch (final NumberFormatException nfe) {
+            throw new TransformException("invalid ts property value", nfe); // NOI18N
+        }
+
+        if (tsEndTime <= tsStartTime) {
+            throw new TransformException("ts start time must be lower than ts end time: [starttime=" // NOI18N
+                        + tsStartTime                                       // NOI18N
+                        + "|endtime=" + tsEndTime + "]");                   // NOI18N
+        }
+
+        if (tsNoOfSteps < 2) {
+            throw new TransformException("ts noOfSteps must be at least two: " + tsNoOfSteps); // NOI18N
+        }
+
+        result.setTsStartTime(tsStartTime);
+        result.setTsEndTime(tsEndTime);
+        result.setNoOSteps(tsNoOfSteps);
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
      * @param   proj  DOCUMENT ME!
      *
      * @throws  TransformException  DOCUMENT ME!
      */
     private void writeProjectSQL(final WuppGeoCPMProject proj) {
-        final File file = new File(proj.getOutputFolder(), "project.sql");       // NOI18N
+        final File file = new File(proj.getOutputFolder(), "project.sql");                    // NOI18N
         if (!file.exists()) {
             try(final BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-                bw.write("INSERT INTO oab_projekt ("                             // NOI18N
-                            + "\"name\", "                                       // NOI18N
-                            + "beschreibung, "                                   // NOI18N
-                            + "auftragnehmer, "                                  // NOI18N
-                            + "gewaessereinzugsgebiet"                           // NOI18N
-                            + ") VALUES ("                                       // NOI18N
-                            + "'" + proj.getProjectName() + "', "                // NOI18N
-                            + "'" + proj.getProjectDescription() + "', "         // NOI18N
-                            + "'" + proj.getContractor() + "', "                 // NOI18N
-                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '"
-                            + proj.getCatchmentName() + "')"                     // NOI18N
-                            + ");");                                             // NOI18N
+                bw.write("INSERT INTO oab_projekt ("                                          // NOI18N
+                            + "\"name\", "                                                    // NOI18N
+                            + "beschreibung, "                                                // NOI18N
+                            + "auftragnehmer, "                                               // NOI18N
+                            + "gewaessereinzugsgebiet"                                        // NOI18N
+                            + ") VALUES ("                                                    // NOI18N
+                            + "'" + proj.getProjectName() + "', "                             // NOI18N
+                            + "'" + proj.getProjectDescription() + "', "                      // NOI18N
+                            + "'" + proj.getContractor() + "', "                              // NOI18N
+                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" // NOI18N
+                            + proj.getCatchmentName() + "')"                                  // NOI18N
+                            + ");");                                                          // NOI18N
             } catch (final IOException ex) {
-                throw new TransformException("cannot write project sql: " + ex); // NOI18N
+                throw new TransformException("cannot write project sql: " + ex);              // NOI18N
             }
         }
     }
@@ -220,28 +303,27 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             throw new TransformException("cannot read project info file", ex); // NOI18N
         }
 
-        final String catchmentName = projectProps.getProperty(IMPORT_INFO_CATCHMENT_NAME);
+        final String catchmentName = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_NAME);
         if ((catchmentName == null) || catchmentName.isEmpty()) {
-            throw new TransformException("cannot find catchment name: " + IMPORT_INFO_CATCHMENT_NAME); // NOI18N
+            throw new TransformException("cannot find catchment name: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_NAME);
         }
 
-        final String projectName = projectProps.getProperty(IMPORT_INFO_NAME);
+        final String projectName = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_NAME);
         if ((projectName == null) || projectName.isEmpty()) {
-            throw new TransformException("cannot find project name: " + IMPORT_INFO_NAME); // NOI18N
+            throw new TransformException("cannot find project name: " + WuppGeoCPMConstants.IMPORT_INFO_NAME); // NOI18N
         }
 
-        final String projectDesc = projectProps.getProperty(IMPORT_INFO_DESC);
-        final String wmsBaseUrl = projectProps.getProperty(IMPORT_INFO_WMS_BASE_URL);
-        final String wmsCapUrl = projectProps.getProperty(IMPORT_INFO_WMS_CAP);
-        final String wmsGetmapUrl = projectProps.getProperty(IMPORT_INFO_WMS_GETMAP);
-        final String contractor = projectProps.getProperty(IMPORT_INFO_CONTRACTOR);
+        final String projectDesc = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_DESC);
+        final String wmsBaseUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_BASE_URL);
+        final String wmsCapUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_CAP);
+        final String contractor = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR);
 
         proj.setCatchmentName(catchmentName);
         proj.setProjectName(projectName);
         proj.setProjectDescription(projectDesc);
         proj.setWmsBaseUrl(wmsBaseUrl);
         proj.setWmsCapabilitiesUrl(wmsCapUrl);
-        proj.setWmsGetMapTemplateUrl(wmsGetmapUrl);
         proj.setContractor(contractor);
     }
 
@@ -254,7 +336,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
      * @throws  TransformException  DOCUMENT ME!
      */
     private void setProjectInfo(final WuppGeoCPMProject proj, final File projFolder) {
-        final File infoFile = new File(projFolder, PROJECT_INFO_FILENAME);
+        final File infoFile = new File(projFolder, WuppGeoCPMConstants.PROJECT_INFO_FILENAME);
         String projectType = null;
         if (infoFile.exists()) {
             final Properties cmProperties = new Properties();
@@ -265,13 +347,13 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                 throw new TransformException("cannot read zm info file", ex); // NOI18N
             }
 
-            final String projectName = cmProperties.getProperty(PROJECT_INFO_NAME);
+            final String projectName = cmProperties.getProperty(WuppGeoCPMConstants.PROJECT_INFO_NAME);
             if ((projectName == null) || projectName.isEmpty()) {
-                throw new TransformException("cannot find project name: " + PROJECT_INFO_NAME); // NOI18N
+                throw new TransformException("cannot find project name: " + WuppGeoCPMConstants.PROJECT_INFO_NAME); // NOI18N
             }
 
-            final String projectDesc = cmProperties.getProperty(PROJECT_INFO_DESC);
-            projectType = cmProperties.getProperty(PROJECT_INFO_TYPE);
+            final String projectDesc = cmProperties.getProperty(WuppGeoCPMConstants.PROJECT_INFO_DESC);
+            projectType = cmProperties.getProperty(WuppGeoCPMConstants.PROJECT_INFO_TYPE);
 
             proj.setName(projectName);
             proj.setDescription(projectDesc);
@@ -303,9 +385,9 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             try {
                 proj.setType(Type.valueOf(projectType));
             } catch (final IllegalArgumentException e) {
-                final TransformException t = new TransformException("cannot find proper type of project: "
+                final TransformException t = new TransformException("cannot find proper type of project: " // NOI18N
                                 + projectType,
-                        e); // NOI18N
+                        e);
                 t.addSuppressed(ex);
 
                 throw t;

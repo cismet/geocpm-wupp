@@ -41,6 +41,5 @@ public class WuppGeoCPMProject extends GeoCPMProject {
     private String dbConn;
     private String wmsBaseUrl;
     private String wmsCapabilitiesUrl;
-    private String wmsGetMapTemplateUrl;
     private String contractor;
 }
