@@ -48,6 +48,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     private final MessageFormat tinViewFormat;
     private final MessageFormat beViewFormat;
     private final MessageFormat maxViewFormat;
+    private final MessageFormat tsViewFormat;
     private final MessageFormat berechnungFormat;
     private final MessageFormat triangleFormat;
     private final MessageFormat beFormat;
@@ -60,6 +61,10 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
     private final String boundingGeomInsert;
     private final String boundingGeomUpdate;
+    private final String dropTsFkTinIndex;
+    private final String dropTsTsIndex;
+    private final String createTsFkTinIndex;
+    private final String createTsTsIndex;
 
     //~ Constructors -----------------------------------------------------------
 
@@ -78,6 +83,17 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
         maxViewFormat = new MessageFormat(
                 "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin WHERE w.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));");
+
+        tsViewFormat = new MessageFormat(
+                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, agg.wasserstand AS hoehe FROM oab_daten_tin t LEFT JOIN (SELECT ts.fk_oab_daten_tin, ts.zeitstempel, ts.wasserstand FROM oab_daten_wasserstand_zeit ts INNER JOIN (SELECT fk_oab_daten_tin, max(zeitstempel) AS zeitstempel FROM oab_daten_wasserstand_zeit WHERE fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1,number,integer} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND zeitstempel >= {5,number,#.##} AND zeitstempel <= {6,number,#.##} GROUP BY fk_oab_daten_tin ) AS agg ON ts.fk_oab_daten_tin = agg.fk_oab_daten_tin AND ts.zeitstempel = agg.zeitstempel WHERE ts.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) ) AS agg ON t.id = agg.fk_oab_daten_tin WHERE t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));"); // NOI18N
+        for (final Format format : tsViewFormat.getFormats()) {
+            if (format instanceof NumberFormat) {
+                ((NumberFormat)format).setGroupingUsed(false);
+            }
+            if (format instanceof DecimalFormat) {
+                ((DecimalFormat)format).setDecimalSeparatorAlwaysShown(false);
+            }
+        }
 
         berechnungFormat = new MessageFormat(
                 "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'');");
@@ -150,6 +166,13 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
         boundingGeomProjFormat = new MessageFormat(
                 "UPDATE oab_projekt SET umschreibende_geometrie = (SELECT max(id) FROM geom) WHERE id = (SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}''));");
+
+        dropTsFkTinIndex = "DROP INDEX IF EXISTS oab_daten_wasserstand_zeit_fk_oab_daten_tin;";                           // NOI18N
+        dropTsTsIndex = "DROP INDEX IF EXISTS oab_daten_wasserstand_zeit_zeitstempel;";                                   // NOI18N
+        createTsFkTinIndex =
+            "CREATE INDEX oab_daten_wasserstand_zeit_fk_oab_daten_tin ON oab_daten_wasserstand_zeit (fk_oab_daten_tin);"; // NOI18N
+        createTsTsIndex =
+            "CREATE INDEX oab_daten_wasserstand_zeit_zeitstempel ON oab_daten_wasserstand_zeit (zeitstempel);";           // NOI18N
     }
 
     //~ Methods ----------------------------------------------------------------
@@ -170,6 +193,15 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
                             && !proj.getProjectName().isEmpty()
                             && (proj.getCatchmentName() != null)
                             && !proj.getCatchmentName().isEmpty();
+
+                if (accept) {
+                    for (final GeoCPMResult r : proj.getResults()) {
+                        accept &= (r instanceof WuppGeoCPMResult)
+                                    && (((WuppGeoCPMResult)r).getNoOSteps() >= 2)
+                                    && (((WuppGeoCPMResult)r).getTsStartTime() >= 0)
+                                    && (((WuppGeoCPMResult)r).getTsStartTime() < ((WuppGeoCPMResult)r).getTsEndTime());
+                    }
+                }
             }
         }
 
@@ -194,10 +226,11 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
             writeZustandMassnahme(bw, proj);
             bw.newLine();
-            bw.newLine();
 
             writeBerechnung(bw, proj);
             bw.newLine();
+
+            writeDropIndex(bw);
             bw.newLine();
 
             writeData(bw, proj);
@@ -210,6 +243,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
             writeViews(bw, proj);
             bw.newLine();
+            bw.newLine();
+
+            writeCreateIndex(bw);
             bw.newLine();
 
             bw.newLine();
@@ -225,6 +261,34 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         }
 
         return proj;
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeDropIndex(final BufferedWriter bw) throws IOException {
+        bw.write(dropTsFkTinIndex);
+        bw.newLine();
+        bw.write(dropTsTsIndex);
+        bw.newLine();
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
+     * @param   bw  DOCUMENT ME!
+     *
+     * @throws  IOException  DOCUMENT ME!
+     */
+    private void writeCreateIndex(final BufferedWriter bw) throws IOException {
+        bw.write(createTsFkTinIndex);
+        bw.newLine();
+        bw.write(createTsTsIndex);
+        bw.newLine();
     }
 
     /**
@@ -289,6 +353,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         writeTinView(bw, proj);
         writeBEView(bw, proj);
         writeMaxViews(bw, proj);
+        writeTimeViews(bw, proj);
     }
 
     /**
@@ -365,6 +430,28 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     /**
      * DOCUMENT ME!
      *
+     * @param   proj       DOCUMENT ME!
+     * @param   annuality  DOCUMENT ME!
+     * @param   step       DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createTsName(final WuppGeoCPMProject proj, final int annuality, final int step) {
+        final StringBuilder sb = new StringBuilder("oab_ws_"); // NOI18N
+        sb.append(convert(proj.getProjectName()));
+        sb.append('_');
+        sb.append(convert(proj.getName()));
+        sb.append("_t");                                       // NOI18N
+        sb.append(annuality);
+        sb.append('_');
+        sb.append(step);
+
+        return sb.toString();
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
      * @param   bw    DOCUMENT ME!
      * @param   proj  DOCUMENT ME!
      *
@@ -414,7 +501,36 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      * @throws  IOException  DOCUMENT ME!
      */
     private void writeTimeViews(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
-        // TODO: discuss the way to go
+        for (final GeoCPMResult gr : proj.getResults()) {
+            final WuppGeoCPMResult result = (WuppGeoCPMResult)gr;
+            // geocpm uses seconds but the config takes minutes
+            final int starttime = result.getTsStartTime() * 60;
+            final int endtime = result.getTsEndTime() * 60;
+            final int noOfSteps = result.getNoOSteps();
+
+            double lowerBound = 0;
+            // noOfSteps is at least two, by contract of the import transformer
+            // we don't want integer div, so 1 has to be a double
+            final double stepLength = (endtime - starttime) / (noOfSteps - 1d);
+            for (int i = 0; i < noOfSteps; ++i) {
+                final double upperBound = starttime + (i * stepLength);
+
+                final Object[] params = new Object[] {
+                        createTsName(proj, result.getAnnuality(), Double.valueOf(upperBound / 60).intValue()),
+                        result.getAnnuality(),
+                        proj.getName(),
+                        proj.getProjectName(),
+                        proj.getCatchmentName(),
+                        lowerBound,
+                        upperBound
+                    };
+
+                bw.write(tsViewFormat.format(params));
+                bw.newLine();
+
+                lowerBound = upperBound;
+            }
+        }
     }
 
     /**

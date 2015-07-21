@@ -81,7 +81,17 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         
         p.getResults().add(new GeoCPMResult(0));
         assertFalse(t.accept(p));
-
+        
+        p.getResults().clear();
+        final WuppGeoCPMResult r = new WuppGeoCPMResult(0);
+        p.getResults().add(r);
+        assertFalse(t.accept(p));
+        
+        r.setNoOSteps(3);
+        r.setTsStartTime(100);
+        r.setTsEndTime(200);
+        assertFalse(t.accept(p));
+        
         ((WuppGeoCPMProject)p).setProjectName("test");
         assertFalse(t.accept(p));
         
@@ -143,7 +153,10 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         o.flush();
         
         p.setGeocpmEin(f1);
-        GeoCPMResult gr = new GeoCPMResult(1);
+        GeoCPMResult gr = new WuppGeoCPMResult(1);
+        ((WuppGeoCPMResult)gr).setNoOSteps(10);
+        ((WuppGeoCPMResult)gr).setTsStartTime(100);
+        ((WuppGeoCPMResult)gr).setTsEndTime(200);
         gr.setGeocpmMax(f2);
         gr.setGeocpmResultElements(f3);
         p.setResults(Arrays.asList(gr));
