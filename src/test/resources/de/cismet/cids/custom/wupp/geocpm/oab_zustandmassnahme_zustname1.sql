@@ -2,7 +2,7 @@ BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, bruchkanten_cap, bruchkanten_layer_name) VALUES ((SELECT id FROM oab_projekt WHERE "name" = 'projectname123456789' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE "name" = 'catchment1')), (SELECT id FROM oab_zm_typ WHERE name = 'Ist'), 'projectdescription1', 'zustname1', 'https://to.be/changed?service=wms&version=1.1.1&request=GetCapabilities', 'oab_tin_projectname12345_zustname1', 'https://to.be/changed?service=wms&version=1.1.1&request=GetCapabilities', 'oab_bk_projectname12345_zustname1');
 
-INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name) VALUES (1, (SELECT max(id) FROM oab_zustand_massnahme), 'https://to.be/changed?service=wms&version=1.1.1&request=GetCapabilities', 'oab_mw_projectname12345_zustname1_t1');
+INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, zr_wasser_cap, zr_wasser_layer_name) VALUES (1, (SELECT max(id) FROM oab_zustand_massnahme), 'https://to.be/changed?service=wms&version=1.1.1&request=GetCapabilities', 'oab_mw_projectname12345_zustname1_t1', 'https://to.be/changed?service=wms&version=1.1.1&request=GetCapabilities', 'oab_ws_projectname12345_zustname1_t1');
 
 DROP INDEX IF EXISTS oab_daten_wasserstand_zeit_fk_oab_daten_tin;
 DROP INDEX IF EXISTS oab_daten_wasserstand_zeit_zeitstempel;

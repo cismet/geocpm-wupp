@@ -96,7 +96,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         }
 
         berechnungFormat = new MessageFormat(
-                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'');");
+                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, zr_wasser_cap, zr_wasser_layer_name) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'', ''{3}'', ''{4}'');");
 
         triangleFormat = new MessageFormat(
                 "INSERT INTO oab_daten_tin (fk_oab_zustand_massnahme, dreieck) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));");
@@ -452,6 +452,25 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     /**
      * DOCUMENT ME!
      *
+     * @param   proj       DOCUMENT ME!
+     * @param   annuality  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    private String createTsGroupName(final WuppGeoCPMProject proj, final int annuality) {
+        final StringBuilder sb = new StringBuilder("oab_ws_"); // NOI18N
+        sb.append(convert(proj.getProjectName()));
+        sb.append('_');
+        sb.append(convert(proj.getName()));
+        sb.append("_t");                                       // NOI18N
+        sb.append(annuality);
+
+        return sb.toString();
+    }
+
+    /**
+     * DOCUMENT ME!
+     *
      * @param   bw    DOCUMENT ME!
      * @param   proj  DOCUMENT ME!
      *
@@ -600,7 +619,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             final Object[] params = new Object[] {
                     result.getAnnuality(),
                     capUrl,
-                    maxLayername
+                    maxLayername,
+                    capUrl,
+                    createTsGroupName(proj, result.getAnnuality())
                 };
 
             bw.write(berechnungFormat.format(params));
