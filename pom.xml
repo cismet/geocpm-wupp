@@ -10,7 +10,7 @@
 
     <groupId>de.cismet.cids.custom.wupp</groupId>
     <artifactId>geocpm-wupp</artifactId>
-    <version>1.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>GeoCPM Wuppertal Customization</name>
@@ -31,7 +31,7 @@
         <connection>scm:https://github.com/cismet/geocpm-wupp.git</connection>
         <developerConnection>scm:git:git@github.com:cismet/geocpm-wupp.git</developerConnection>
         <url>https://github.com/cismet/geocpm-wupp</url>
-        <tag>v1.0</tag>
+        <tag>v1.0.1</tag>
     </scm>
     <issueManagement>
         <system>GitHub</system>
