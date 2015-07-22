@@ -16,7 +16,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
@@ -103,15 +105,25 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
 
         final List<GeoCPMProject> projects = new ArrayList<>();
 
-        for (final File projFile : basedir.listFiles(new FileFilter() {
+        final File[] projFiles = basedir.listFiles(new FileFilter() {
 
-                            @Override
-                            public boolean accept(final File pathname) {
-                                return pathname.isDirectory()
+                    @Override
+                    public boolean accept(final File pathname) {
+                        return pathname.isDirectory()
                                     && !pathname.getName().equals(WuppGeoCPMConstants.IMPORT_OUT_DIR);
-                            }
-                        })
-        ) {
+                    }
+                });
+
+        // enforce natural sorting of files, don't rely on the underlying filesystem
+        Arrays.sort(projFiles, new Comparator<File>() {
+
+                @Override
+                public int compare(final File o1, final File o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+
+        for (final File projFile : projFiles) {
             final WuppGeoCPMProject proj = new WuppGeoCPMProject();
             proj.setOutputFolder(outputFolder);
 
