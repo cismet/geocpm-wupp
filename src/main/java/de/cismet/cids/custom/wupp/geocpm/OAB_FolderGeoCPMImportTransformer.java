@@ -144,6 +144,15 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                 throw new TransformException("no annuality folders found: " + projFile); // NOI18N
             }
 
+            // enforce natural sorting of files, don't rely on the underlying filesystem
+            Arrays.sort(annualityFolders, new Comparator<File>() {
+
+                    @Override
+                    public int compare(final File o1, final File o2) {
+                        return o1.getName().compareTo(o2.getName());
+                    }
+                });
+
             boolean first = true;
             final List<GeoCPMResult> results = new ArrayList<>(annualityFolders.length);
             for (final File annualityFolder : annualityFolders) {
