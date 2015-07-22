@@ -21,8 +21,11 @@ import java.text.NumberFormat;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import de.cismet.geocpm.api.GeoCPMProject;
 import de.cismet.geocpm.api.GeoCPMResult;
@@ -775,7 +778,17 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      * @throws  IOException  DOCUMENT ME!
      */
     private void writeWaterTime(final BufferedWriter bw, final int annuality, final Result r) throws IOException {
-        for (final Entry<Double, Double> levels : r.getWaterlevels().entrySet()) {
+        final Set<Entry<Double, Double>> entries = r.getWaterlevels().entrySet();
+        final List<Entry<Double, Double>> sortedEntries = new ArrayList<>(entries);
+        Collections.sort(sortedEntries, new Comparator<Entry<Double, Double>>() {
+
+                @Override
+                public int compare(final Entry<Double, Double> o1, final Entry<Double, Double> o2) {
+                    return o1.getKey().compareTo(o2.getKey());
+                }
+            });
+
+        for (final Entry<Double, Double> levels : sortedEntries) {
             final Object[] params = new Object[] {
                     annuality,
                     levels.getKey(),
