@@ -284,7 +284,8 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                             + ") VALUES ("                                                    // NOI18N
                             + "'" + proj.getProjectName() + "', "                             // NOI18N
                             + "'" + proj.getProjectDescription() + "', "                      // NOI18N
-                            + "'" + proj.getContractor() + "', "                              // NOI18N
+                            + "(SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = '"  // NOI18N
+                            + proj.getContractor() + "'), "                                   // NOI18N
                             + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" // NOI18N
                             + proj.getCatchmentName() + "')"                                  // NOI18N
                             + ");");                                                          // NOI18N
