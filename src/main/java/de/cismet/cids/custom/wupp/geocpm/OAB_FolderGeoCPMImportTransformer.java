@@ -286,6 +286,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                 bw.write("INSERT INTO oab_projekt ("                                                             // NOI18N
                             + "\"name\", "                                                                       // NOI18N
                             + "beschreibung, "                                                                   // NOI18N
+                            + "kanalnetzmodell, "                                                                // NOI18N
                             + "auftragnehmer, "                                                                  // NOI18N
                             + "berechnungsverfahren, "                                                           // NOI18N
                             + "gewaessereinzugsgebiet, "                                                         // NOI18N
@@ -295,6 +296,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                             + ") VALUES ("                                                                       // NOI18N
                             + "'" + proj.getProjectName() + "', "                                                // NOI18N
                             + "'" + proj.getProjectDescription() + "', "                                         // NOI18N
+                            + "'" + proj.getSewerNetworkModel() + "', "                                          // NOI18N
                             + "(SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = '"                     // NOI18N
                             + proj.getContractor() + "'), "                                                      // NOI18N
                             + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = '"              // NOI18N
@@ -360,6 +362,12 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                         + WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
         }
 
+        final String sewerNetworkModel = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL);
+        if ((sewerNetworkModel == null) || sewerNetworkModel.isEmpty()) {
+            throw new TransformException("cannot find project sewer network model: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL);
+        }
+
         final String projectDesc = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_DESC);
         final String wmsBaseUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_BASE_URL);
         final String wmsCapUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_CAP);
@@ -393,6 +401,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
         proj.setStateAlkis(stateAlkis);
         proj.setStateVerdis(stateVerdis);
         proj.setCalculationMode(calcMode);
+        proj.setSewerNetworkModel(sewerNetworkModel);
     }
 
     /**
