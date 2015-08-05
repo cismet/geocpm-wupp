@@ -48,4 +48,5 @@ public class WuppGeoCPMProject extends GeoCPMProject {
     private Date stateAlkis;
     private Date stateVerdis;
     private String calculationMode;
+    private String sewerNetworkModel;
 }

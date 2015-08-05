@@ -235,6 +235,8 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE + "=mode1");
         bw.newLine();
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL + "=sewer1");
+        bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_DESC + "=desc1");
         bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_NAME + "=name1");
@@ -387,8 +389,8 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         assertNull(br.readLine());
         br.close();
         
-        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", beschreibung, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
-        + "'name1', 'desc1', (SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
+        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", beschreibung, kanalnetzmodell, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
+        + "'name1', 'desc1', 'sewer1', (SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
         
     }
 

@@ -29,6 +29,7 @@ public final class WuppGeoCPMConstants {
     public static final String IMPORT_INFO_STATE_ALKIS = "geocpm.projekt.standAlkis";                // NOI18N
     public static final String IMPORT_INFO_STATE_VERDIS = "geocpm.projekt.standVerdis";              // NOI18N
     public static final String IMPORT_INFO_CALCULATION_MODE = "geocpm.projekt.berechnungsverfahren"; // NOI18N
+    public static final String IMPORT_INFO_SEWER_NETWORK_MODEL = "geocpm.projekt.kanalnetzmodell";   // NOI18N
 
     public static final String PROJECT_INFO_FILENAME = "zm.info";                    // NOI18N
     public static final String PROJECT_INFO_NAME = "geocpm.projekt.zm.name";         // NOI18N
