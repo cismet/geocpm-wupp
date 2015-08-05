@@ -287,6 +287,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                             + "\"name\", "                                                                       // NOI18N
                             + "beschreibung, "                                                                   // NOI18N
                             + "auftragnehmer, "                                                                  // NOI18N
+                            + "berechnungsverfahren, "                                                           // NOI18N
                             + "gewaessereinzugsgebiet, "                                                         // NOI18N
                             + "stand_dgm, "                                                                      // NOI18N
                             + "stand_alkis, "                                                                    // NOI18N
@@ -296,6 +297,8 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                             + "'" + proj.getProjectDescription() + "', "                                         // NOI18N
                             + "(SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = '"                     // NOI18N
                             + proj.getContractor() + "'), "                                                      // NOI18N
+                            + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = '"              // NOI18N
+                            + proj.getCalculationMode() + "'), "                                                 // NOI18N
                             + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '"                    // NOI18N
                             + proj.getCatchmentName() + "'), "                                                   // NOI18N
                             + "'" + proj.getStateDEM() + "', "                                                   // NOI18N
@@ -351,6 +354,12 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             throw new TransformException("cannot find project name: " + WuppGeoCPMConstants.IMPORT_INFO_NAME); // NOI18N
         }
 
+        final String calcMode = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
+        if ((calcMode == null) || calcMode.isEmpty()) {
+            throw new TransformException("cannot find project calculation mode: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
+        }
+
         final String projectDesc = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_DESC);
         final String wmsBaseUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_BASE_URL);
         final String wmsCapUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_CAP);
@@ -383,6 +392,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
         proj.setStateDEM(stateDEM);
         proj.setStateAlkis(stateAlkis);
         proj.setStateVerdis(stateVerdis);
+        proj.setCalculationMode(calcMode);
     }
 
     /**
