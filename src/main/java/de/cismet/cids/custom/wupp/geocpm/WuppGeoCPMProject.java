@@ -13,6 +13,8 @@ import lombok.ToString;
 
 import java.io.File;
 
+import java.util.Date;
+
 import de.cismet.geocpm.api.GeoCPMProject;
 
 /**
@@ -42,4 +44,7 @@ public class WuppGeoCPMProject extends GeoCPMProject {
     private String wmsBaseUrl;
     private String wmsCapabilitiesUrl;
     private String contractor;
+    private String stateDEM;
+    private Date stateAlkis;
+    private Date stateVerdis;
 }
