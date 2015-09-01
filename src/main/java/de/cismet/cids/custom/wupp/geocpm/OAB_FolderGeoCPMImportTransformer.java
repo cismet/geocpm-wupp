@@ -36,7 +36,10 @@ import de.cismet.geocpm.api.transform.TransformException;
 import de.cismet.tools.FileUtils;
 
 /**
- * DOCUMENT ME!
+ * Transforms a GeoCPM folder to internal projects that then can be processed. Sets the output folder to {@link WuppGeoCPMConstants#IMPORT_OUT_DIR}
+ * that will be available in the GeoCPM folder itself.
+ * 
+ * The folder spec is available at https://github.com/cismet/wupp/wiki/Oberfl%C3%A4chenabflussberechnung
  *
  * @author   martin.scholl@cismet.de
  * @version  1.0
