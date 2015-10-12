@@ -18,9 +18,9 @@ import de.cismet.geocpm.api.transform.GeoCPMImportTransformer;
 import de.cismet.geocpm.api.transform.TransformException;
 
 /**
- * Takes a zip file as an input that is simply extracted to a temporary folder (the system's temp folder, see {@link System#getProperties()}).
- * The content is assumed to be compatible with the {@link OAB_FolderGeoCPMImportTransformer} as it uses this transformer to
- * actually create a OAB compliant output.
+ * Takes a zip file as an input that is simply extracted to a temporary folder (the system's temp folder, see
+ * {@link System#getProperties()}). The content is assumed to be compatible with the
+ * {@link OAB_FolderGeoCPMImportTransformer} as it uses this transformer to actually create a OAB compliant output.
  *
  * @author   martin.scholl@cismet.de
  * @version  1.0
