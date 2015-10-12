@@ -15,11 +15,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import de.cismet.geocpm.api.GeoCPMProject;
@@ -30,7 +36,10 @@ import de.cismet.geocpm.api.transform.TransformException;
 import de.cismet.tools.FileUtils;
 
 /**
- * DOCUMENT ME!
+ * Transforms a GeoCPM folder to internal projects that then can be processed. Sets the output folder to
+ * {@link WuppGeoCPMConstants#IMPORT_OUT_DIR} that will be available in the GeoCPM folder itself.
+ *
+ * <p>The folder spec is available at https://github.com/cismet/wupp/wiki/Oberfl%C3%A4chenabflussberechnung</p>
  *
  * @author   martin.scholl@cismet.de
  * @version  1.0
@@ -273,23 +282,38 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
      * @throws  TransformException  DOCUMENT ME!
      */
     private void writeProjectSQL(final WuppGeoCPMProject proj) {
-        final File file = new File(proj.getOutputFolder(), "project.sql");                    // NOI18N
+        final File file = new File(proj.getOutputFolder(), "project.sql");                                       // NOI18N
+        final DateFormat df = new SimpleDateFormat("YYYY-MM-dd");                                                // NOI18N
         if (!file.exists()) {
             try(final BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-                bw.write("INSERT INTO oab_projekt ("                                          // NOI18N
-                            + "\"name\", "                                                    // NOI18N
-                            + "beschreibung, "                                                // NOI18N
-                            + "auftragnehmer, "                                               // NOI18N
-                            + "gewaessereinzugsgebiet"                                        // NOI18N
-                            + ") VALUES ("                                                    // NOI18N
-                            + "'" + proj.getProjectName() + "', "                             // NOI18N
-                            + "'" + proj.getProjectDescription() + "', "                      // NOI18N
-                            + "'" + proj.getContractor() + "', "                              // NOI18N
-                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '" // NOI18N
-                            + proj.getCatchmentName() + "')"                                  // NOI18N
-                            + ");");                                                          // NOI18N
+                bw.write("INSERT INTO oab_projekt ("                                                             // NOI18N
+                            + "\"name\", "                                                                       // NOI18N
+                            + "beschreibung, "                                                                   // NOI18N
+                            + "kanalnetzmodell, "                                                                // NOI18N
+                            + "auftragnehmer, "                                                                  // NOI18N
+                            + "berechnungsverfahren, "                                                           // NOI18N
+                            + "gewaessereinzugsgebiet, "                                                         // NOI18N
+                            + "stand_dgm, "                                                                      // NOI18N
+                            + "stand_alkis, "                                                                    // NOI18N
+                            + "stand_verdis"                                                                     // NOI18N
+                            + ") VALUES ("                                                                       // NOI18N
+                            + "'" + proj.getProjectName() + "', "                                                // NOI18N
+                            + "'" + proj.getProjectDescription() + "', "                                         // NOI18N
+                            + "'" + proj.getSewerNetworkModel() + "', "                                          // NOI18N
+                            + "(SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = '"                     // NOI18N
+                            + proj.getContractor() + "'), "                                                      // NOI18N
+                            + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = '"              // NOI18N
+                            + proj.getCalculationMode() + "'), "                                                 // NOI18N
+                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '"                    // NOI18N
+                            + proj.getCatchmentName() + "'), "                                                   // NOI18N
+                            + "'" + proj.getStateDEM() + "', "                                                   // NOI18N
+                            + ((proj.getStateAlkis() == null) ? "null, "                                         // NOI18N
+                                                              : ("'" + df.format(proj.getStateAlkis()) + "', ")) // NOI18N
+                            + ((proj.getStateVerdis() == null) ? "null"                                          // NOI18N
+                                                               : ("'" + df.format(proj.getStateVerdis()) + "'")) // NOI18N
+                            + ");");                                                                             // NOI18N
             } catch (final IOException ex) {
-                throw new TransformException("cannot write project sql: " + ex);              // NOI18N
+                throw new TransformException("cannot write project sql: " + ex);                                 // NOI18N
             }
         }
     }
@@ -335,10 +359,40 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             throw new TransformException("cannot find project name: " + WuppGeoCPMConstants.IMPORT_INFO_NAME); // NOI18N
         }
 
+        final String calcMode = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
+        if ((calcMode == null) || calcMode.isEmpty()) {
+            throw new TransformException("cannot find project calculation mode: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
+        }
+
+        final String sewerNetworkModel = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL);
+        if ((sewerNetworkModel == null) || sewerNetworkModel.isEmpty()) {
+            throw new TransformException("cannot find project sewer network model: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL);
+        }
+
         final String projectDesc = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_DESC);
         final String wmsBaseUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_BASE_URL);
         final String wmsCapUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_CAP);
         final String contractor = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR);
+        final String stateDEM = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_STATE_DEM);
+
+        final DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, Locale.GERMANY);
+
+        Date stateAlkis = null;
+        Date stateVerdis = null;
+
+        try {
+            stateAlkis = df.parse(projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_STATE_ALKIS, ""));
+        } catch (final ParseException ex) {
+            // the date simply stays empty
+        }
+
+        try {
+            stateVerdis = df.parse(projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_STATE_VERDIS, ""));
+        } catch (final ParseException ex) {
+            // the date simply stays empty
+        }
 
         proj.setCatchmentName(catchmentName);
         proj.setProjectName(projectName);
@@ -346,6 +400,11 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
         proj.setWmsBaseUrl(wmsBaseUrl);
         proj.setWmsCapabilitiesUrl(wmsCapUrl);
         proj.setContractor(contractor);
+        proj.setStateDEM(stateDEM);
+        proj.setStateAlkis(stateAlkis);
+        proj.setStateVerdis(stateVerdis);
+        proj.setCalculationMode(calcMode);
+        proj.setSewerNetworkModel(sewerNetworkModel);
     }
 
     /**

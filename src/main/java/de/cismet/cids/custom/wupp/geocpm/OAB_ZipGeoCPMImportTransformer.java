@@ -18,7 +18,9 @@ import de.cismet.geocpm.api.transform.GeoCPMImportTransformer;
 import de.cismet.geocpm.api.transform.TransformException;
 
 /**
- * DOCUMENT ME!
+ * Takes a zip file as an input that is simply extracted to a temporary folder (the system's temp folder, see
+ * {@link System#getProperties()}). The content is assumed to be compatible with the
+ * {@link OAB_FolderGeoCPMImportTransformer} as it uses this transformer to actually create a OAB compliant output.
  *
  * @author   martin.scholl@cismet.de
  * @version  1.0
@@ -40,7 +42,6 @@ public class OAB_ZipGeoCPMImportTransformer implements GeoCPMImportTransformer {
                     zip.close();
                     accept = true;
                 } catch (final IOException ex) {
-                    ex.printStackTrace();
                     // noop
                 }
             }
@@ -53,8 +54,8 @@ public class OAB_ZipGeoCPMImportTransformer implements GeoCPMImportTransformer {
     public Collection<GeoCPMProject> transform(final Object obj) {
         // we assume the framework uses accept
         try(final ZipFile zip = new ZipFile((File)obj)) {
-            final File extractFolder = new File(System.getProperty("java.io.tmpdir"),
-                    "geocpm_extract_"
+            final File extractFolder = new File(System.getProperty("java.io.tmpdir"), // NOI18N
+                    "geocpm_extract_" // NOI18N
                             + System.currentTimeMillis());
             if (!extractFolder.mkdir()) {
                 throw new TransformException("cannot create extract folder: " + extractFolder);

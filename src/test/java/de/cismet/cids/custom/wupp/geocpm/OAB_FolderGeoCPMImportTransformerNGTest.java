@@ -2,8 +2,10 @@ package de.cismet.cids.custom.wupp.geocpm;
 
 import de.cismet.geocpm.api.GeoCPMProject;
 import de.cismet.geocpm.api.GeoCPMResult;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Collection;
 import java.util.Iterator;
@@ -148,8 +150,6 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
     public void testTransform() throws Exception {
         printCurrentTestName();
         
-        final File f = new File("/Users/mscholl/projects/Wupp/SUDPLAN-GeoCPM-WuNDa/GeoCPM Struktur v1");
-        
         final OAB_FolderGeoCPMImportTransformer t = new OAB_FolderGeoCPMImportTransformer();
         
         final File a = new File(testFolder, "a");
@@ -233,11 +233,21 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR + "=con1");
         bw.newLine();
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE + "=mode1");
+        bw.newLine();
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL + "=sewer1");
+        bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_DESC + "=desc1");
         bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_NAME + "=name1");
         bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_WMS_BASE_URL + "=bu1");
+        bw.newLine();
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_STATE_DEM + "=state1");
+        bw.newLine();
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_STATE_ALKIS + "=01.01.1970");
+        bw.newLine();
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_STATE_VERDIS + "=31.01.1970");
         bw.close();
         
         bw = new BufferedWriter(new FileWriter(z1));
@@ -365,10 +375,23 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         w = (WuppGeoCPMProject)g;
         assertEquals(w.getCatchmentName(), "cm1");
         assertEquals(w.getContractor(), "con1");
-        assertEquals(w.getOutputFolder().getAbsolutePath(), 
-                new File(testFolder, WuppGeoCPMConstants.IMPORT_OUT_DIR).getAbsolutePath());
+        final File outDir = new File(testFolder, WuppGeoCPMConstants.IMPORT_OUT_DIR);
+        assertEquals(w.getOutputFolder().getAbsolutePath(), outDir.getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
+        
+        final File projectSql = new File(outDir, "project.sql");
+        assertTrue(projectSql.exists());
+        
+        BufferedReader br = new BufferedReader(new FileReader(projectSql));
+        final String insert = br.readLine();
+        assertNotNull(insert);
+        assertNull(br.readLine());
+        br.close();
+        
+        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", beschreibung, kanalnetzmodell, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
+        + "'name1', 'desc1', 'sewer1', (SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
+        
     }
 
 }
