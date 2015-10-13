@@ -16,6 +16,7 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import static org.testng.Assert.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -30,6 +31,8 @@ import org.testng.annotations.Test;
  */
 public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
 
+    private static final Locale DEFAULT_LOCALE = Locale.getDefault();
+    
     public OAB_ZustandMassnahme_PostgisSQLTransformerNGTest() {
     }
 
@@ -47,6 +50,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
 
     @AfterMethod
     public void tearDownMethod() throws Exception {
+        Locale.setDefault(DEFAULT_LOCALE);
     }
 
     public void printCurrentTestName() {
@@ -104,6 +108,89 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
      */
     @Test
     public void testTransform() throws Exception {
+        printCurrentTestName();
+        
+        OAB_ZustandMassnahme_PostgisSQLTransformer t = new OAB_ZustandMassnahme_PostgisSQLTransformer();
+        WuppGeoCPMProject p = new WuppGeoCPMProject();
+        p.setType(Type.Ist);
+        
+        p.setName("zustname1");
+        p.setDescription("zustdescription1");
+        p.setProjectName("projectname123456789");
+        p.setDescription("projectdescription1");
+        p.setCatchmentName("catchment1");
+        p.setWmsBaseUrl("https://to.be/changed");
+        p.setOutputFolder(new File(System.getProperty("java.io.tmpdir")));
+        
+        BufferedInputStream r = new BufferedInputStream(
+                getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPM.ein"));
+        File f1 = File.createTempFile("test", "geocpmtests");
+        f1.deleteOnExit();
+        
+        int c;
+        BufferedOutputStream o = new BufferedOutputStream(new FileOutputStream(f1));
+        while((c = r.read()) >= 0) {
+            o.write(c);
+        }
+        o.flush();
+        
+        r = new BufferedInputStream(
+                getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPMMax.aus"));
+        File f2 = File.createTempFile("test", "geocpmtests");
+        f2.deleteOnExit();
+        
+        o = new BufferedOutputStream(new FileOutputStream(f2));
+        while((c = r.read()) >= 0) {
+            o.write(c);
+        }
+        o.flush();
+        
+        r = new BufferedInputStream(
+                getClass().getResourceAsStream("OAB_ZustandMassnahme_PostgisSQLTransformer_SimpleGeoCPMResultsElements.aus"));
+        File f3 = File.createTempFile("test", "geocpmtests");
+        f3.deleteOnExit();
+        
+        o = new BufferedOutputStream(new FileOutputStream(f3));
+        while((c = r.read()) >= 0) {
+            o.write(c);
+        }
+        o.flush();
+        
+        p.setGeocpmEin(f1);
+        GeoCPMResult gr = new WuppGeoCPMResult(1);
+        ((WuppGeoCPMResult)gr).setNoOSteps(10);
+        ((WuppGeoCPMResult)gr).setTsStartTime(100);
+        ((WuppGeoCPMResult)gr).setTsEndTime(200);
+        gr.setGeocpmMax(f2);
+        gr.setGeocpmResultElements(f3);
+        p.setResults(Arrays.asList(gr));
+        
+        final GeoCPMEinPointToMemoryTransformer t1 = new GeoCPMEinPointToMemoryTransformer();
+        final GeoCPMEinTriangleToMemoryTransformer t2 = new GeoCPMEinTriangleToMemoryTransformer();
+        final GeoCPMMaxToMemoryTransformer t3 = new GeoCPMMaxToMemoryTransformer();
+        final GeoCPMResultElementsToMemoryTransformer t4 = new GeoCPMResultElementsToMemoryTransformer();
+        
+        t1.transform(p);
+        t2.transform(p);
+        t3.transform(p);
+        t4.transform(p);
+        
+        t.transform(p);
+        assertNotNull(p.getZustandMassnahmeSqlFile());
+        final BufferedReader expR = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("oab_zustandmassnahme_zustname1.sql")));
+        final BufferedReader resR = new BufferedReader(new FileReader(p.getZustandMassnahmeSqlFile()));
+        
+        String line1;
+        String line2;
+        while((line1 = expR.readLine()) != null) {
+            line2 = resR.readLine();
+            assertEquals(line2, line1);
+        }
+    }
+    
+    @Test
+    public void testTransform_correctLocale() throws Exception {
+        Locale.setDefault(Locale.GERMAN);
         printCurrentTestName();
         
         OAB_ZustandMassnahme_PostgisSQLTransformer t = new OAB_ZustandMassnahme_PostgisSQLTransformer();
