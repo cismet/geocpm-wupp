@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -76,19 +77,24 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      */
     public OAB_ZustandMassnahme_PostgisSQLTransformer() {
         zustandMassnahmeFormat = new MessageFormat(
-                "INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, bruchkanten_cap, bruchkanten_layer_name) VALUES ((SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}'')), (SELECT id FROM oab_zm_typ WHERE name = ''{2}''), ''{3}'', ''{4}'', ''{5}'', ''{6}'', ''{7}'', ''{8}'');"); // NOI18N
+                "INSERT INTO oab_zustand_massnahme (projekt, typ, beschreibung, name, tin_cap, tin_layer_name, bruchkanten_cap, bruchkanten_layer_name) VALUES ((SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}'')), (SELECT id FROM oab_zm_typ WHERE name = ''{2}''), ''{3}'', ''{4}'', ''{5}'', ''{6}'', ''{7}'', ''{8}'');", // NOI18N
+                Locale.ENGLISH);
 
         tinViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT id, dreieck AS geometrie FROM oab_daten_tin WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));"); // NOI18N
+                "CREATE VIEW {0} AS SELECT id, dreieck AS geometrie FROM oab_daten_tin WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));", // NOI18N
+                Locale.ENGLISH);
 
         beViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT id, bruchkante AS geometrie FROM oab_daten_bruchkante WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));"); // NOI18N
+                "CREATE VIEW {0} AS SELECT id, bruchkante AS geometrie FROM oab_daten_bruchkante WHERE fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{1}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{2}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{3}'')));", // NOI18N
+                Locale.ENGLISH);
 
         maxViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin WHERE w.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));"); // NOI18N
+                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, w.max_wasser AS hoehe FROM oab_daten_tin t LEFT JOIN oab_daten_wasserstand_max w ON t.id = w.fk_oab_daten_tin WHERE w.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));", // NOI18N
+                Locale.ENGLISH);
 
         tsViewFormat = new MessageFormat(
-                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, agg.wasserstand AS hoehe FROM oab_daten_tin t LEFT JOIN (SELECT ts.fk_oab_daten_tin, ts.zeitstempel, ts.wasserstand FROM oab_daten_wasserstand_zeit ts INNER JOIN (SELECT fk_oab_daten_tin, max(zeitstempel) AS zeitstempel FROM oab_daten_wasserstand_zeit WHERE fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1,number,integer} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND zeitstempel >= {5,number,#.##} AND zeitstempel <= {6,number,#.##} GROUP BY fk_oab_daten_tin ) AS agg ON ts.fk_oab_daten_tin = agg.fk_oab_daten_tin AND ts.zeitstempel = agg.zeitstempel WHERE ts.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) ) AS agg ON t.id = agg.fk_oab_daten_tin WHERE t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));"); // NOI18N
+                "CREATE VIEW {0} AS SELECT t.id, t.dreieck AS geometrie, agg.wasserstand AS hoehe FROM oab_daten_tin t LEFT JOIN (SELECT ts.fk_oab_daten_tin, ts.zeitstempel, ts.wasserstand FROM oab_daten_wasserstand_zeit ts INNER JOIN (SELECT fk_oab_daten_tin, max(zeitstempel) AS zeitstempel FROM oab_daten_wasserstand_zeit WHERE fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1,number,integer} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) AND zeitstempel >= {5,number,#.##} AND zeitstempel <= {6,number,#.##} GROUP BY fk_oab_daten_tin ) AS agg ON ts.fk_oab_daten_tin = agg.fk_oab_daten_tin AND ts.zeitstempel = agg.zeitstempel WHERE ts.fk_oab_berechnung = (SELECT id FROM oab_berechnung WHERE jaehrlichkeit = {1} AND zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')))) ) AS agg ON t.id = agg.fk_oab_daten_tin WHERE t.fk_oab_zustand_massnahme = (SELECT id FROM oab_zustand_massnahme WHERE \"name\" = ''{2}'' AND projekt = (SELECT id FROM oab_projekt WHERE \"name\" = ''{3}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{4}'')));", // NOI18N
+                Locale.ENGLISH);
         for (final Format format : tsViewFormat.getFormats()) {
             if (format instanceof NumberFormat) {
                 ((NumberFormat)format).setGroupingUsed(false);
@@ -99,16 +105,20 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         }
 
         berechnungFormat = new MessageFormat(
-                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, zr_wasser_cap, zr_wasser_layer_name) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'', ''{3}'', ''{4}'');"); // NOI18N
+                "INSERT INTO oab_berechnung (jaehrlichkeit, zustand_massnahme, max_wasser_cap, max_wasser_layer_name, zr_wasser_cap, zr_wasser_layer_name) VALUES ({0}, (SELECT max(id) FROM oab_zustand_massnahme), ''{1}'', ''{2}'', ''{3}'', ''{4}'');", // NOI18N
+                Locale.ENGLISH);
 
         triangleFormat = new MessageFormat(
-                "INSERT INTO oab_daten_tin (fk_oab_zustand_massnahme, dreieck) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));"); // NOI18N
+                "INSERT INTO oab_daten_tin (fk_oab_zustand_massnahme, dreieck) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));", // NOI18N
+                Locale.ENGLISH);
 
         beFormat = new MessageFormat(
-                "INSERT INTO oab_daten_bruchkante (fk_oab_zustand_massnahme, bruchkante) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));"); // NOI18N
+                "INSERT INTO oab_daten_bruchkante (fk_oab_zustand_massnahme, bruchkante) VALUES ((SELECT max(id) FROM oab_zustand_massnahme), st_geomfromtext(''{0}'', 25832));", // NOI18N
+                Locale.ENGLISH);
 
         maxWaterFormat = new MessageFormat(
-                "INSERT INTO oab_daten_wasserstand_max (fk_oab_daten_tin, fk_oab_berechnung, max_wasser) VALUES ((SELECT max(id) FROM oab_daten_tin), (SELECT max(id) FROM oab_berechnung WHERE jaehrlichkeit = {0,number,integer}), {1,number,#.##########});"); // NOI18N
+                "INSERT INTO oab_daten_wasserstand_max (fk_oab_daten_tin, fk_oab_berechnung, max_wasser) VALUES ((SELECT max(id) FROM oab_daten_tin), (SELECT max(id) FROM oab_berechnung WHERE jaehrlichkeit = {0,number,integer}), {1,number,#.##########});", // NOI18N
+                Locale.ENGLISH);
         for (final Format format : maxWaterFormat.getFormats()) {
             if (format instanceof NumberFormat) {
                 ((NumberFormat)format).setGroupingUsed(false);
@@ -119,7 +129,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         }
 
         timeWaterFormat = new MessageFormat(
-                "INSERT INTO oab_daten_wasserstand_zeit (fk_oab_daten_tin, fk_oab_berechnung, zeitstempel, wasserstand) VALUES ((SELECT max(id) FROM oab_daten_tin), (SELECT max(id) FROM oab_berechnung WHERE jaehrlichkeit = {0,number,integer}), {1,number,#.##}, {2,number,#.###});"); // NOI18N
+                "INSERT INTO oab_daten_wasserstand_zeit (fk_oab_daten_tin, fk_oab_berechnung, zeitstempel, wasserstand) VALUES ((SELECT max(id) FROM oab_daten_tin), (SELECT max(id) FROM oab_berechnung WHERE jaehrlichkeit = {0,number,integer}), {1,number,#.##}, {2,number,#.###});", // NOI18N
+                Locale.ENGLISH);
         for (final Format format : timeWaterFormat.getFormats()) {
             if (format instanceof NumberFormat) {
                 ((NumberFormat)format).setGroupingUsed(false);
@@ -130,7 +141,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         }
 
         triangleWktFormat = new MessageFormat(
-                "POLYGON(({0,number,#.##########} {1,number,#.##########} {2,number,#.##########}, {3,number,#.##########} {4,number,#.##########} {5,number,#.##########}, {6,number,#.##########} {7,number,#.##########} {8,number,#.##########}, {9,number,#.##########} {10,number,#.##########} {11,number,#.##########}))"); // NOI18N
+                "POLYGON(({0,number,#.##########} {1,number,#.##########} {2,number,#.##########}, {3,number,#.##########} {4,number,#.##########} {5,number,#.##########}, {6,number,#.##########} {7,number,#.##########} {8,number,#.##########}, {9,number,#.##########} {10,number,#.##########} {11,number,#.##########}))", // NOI18N
+                Locale.ENGLISH);
         for (final Format format : triangleWktFormat.getFormats()) {
             if (format instanceof NumberFormat) {
                 ((NumberFormat)format).setGroupingUsed(false);
@@ -141,7 +153,7 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         }
 
         beWkt2Format = new MessageFormat(
-                "LINESTRING({0,number,#.##########} {1,number,#.##########}, {2,number,#.##########} {3,number,#.##########})");                                                  // NOI18N
+                "LINESTRING({0,number,#.##########} {1,number,#.##########}, {2,number,#.##########} {3,number,#.##########})");                                                 // NOI18N
         for (final Format format : beWkt2Format.getFormats()) {
             if (format instanceof NumberFormat) {
                 ((NumberFormat)format).setGroupingUsed(false);
@@ -151,7 +163,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             }
         }
         beWkt3Format = new MessageFormat(
-                "LINESTRING({0,number,#.##########} {1,number,#.##########}, {2,number,#.##########} {3,number,#.##########}, {4,number,#.##########} {5,number,#.##########})"); // NOI18N
+                "LINESTRING({0,number,#.##########} {1,number,#.##########}, {2,number,#.##########} {3,number,#.##########}, {4,number,#.##########} {5,number,#.##########})", // NOI18N
+                Locale.ENGLISH);
         for (final Format format : beWkt3Format.getFormats()) {
             if (format instanceof NumberFormat) {
                 ((NumberFormat)format).setGroupingUsed(false);
@@ -168,7 +181,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             "UPDATE oab_zustand_massnahme SET umschreibende_geometrie = (SELECT max(id) FROM geom) WHERE id = (SELECT max(id) FROM oab_zustand_massnahme);"; // NOI18N
 
         boundingGeomProjFormat = new MessageFormat(
-                "UPDATE oab_projekt SET umschreibende_geometrie = (SELECT max(id) FROM geom) WHERE id = (SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}''));"); // NOI18N
+                "UPDATE oab_projekt SET umschreibende_geometrie = (SELECT max(id) FROM geom) WHERE id = (SELECT id FROM oab_projekt WHERE \"name\" = ''{0}'' AND gewaessereinzugsgebiet = (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = ''{1}''));", // NOI18N
+                Locale.ENGLISH);
 
         dropTsFkTinIndex = "DROP INDEX IF EXISTS oab_daten_wasserstand_zeit_fk_oab_daten_tin;";                           // NOI18N
         dropTsTsIndex = "DROP INDEX IF EXISTS oab_daten_wasserstand_zeit_zeitstempel;";                                   // NOI18N
