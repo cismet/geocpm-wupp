@@ -17,22 +17,24 @@ public final class WuppGeoCPMConstants {
 
     //~ Static fields/initializers ---------------------------------------------
 
-    public static final String IMPORT_OUT_DIR = "import_out";                                        // NOI18N
-    public static final String IMPORT_INFO_FILENAME = "projekt.info";                                // NOI18N
-    public static final String IMPORT_INFO_CATCHMENT_NAME = "geocpm.projekt.gep.name";               // NOI18N
-    public static final String IMPORT_INFO_NAME = "geocpm.projekt.name";                             // NOI18N
-    public static final String IMPORT_INFO_DESC = "geocpm.projekt.beschreibung";                     // NOI18N
-    public static final String IMPORT_INFO_WMS_BASE_URL = "geocpm.projekt.wms.baseurl";              // NOI18N
-    public static final String IMPORT_INFO_WMS_CAP = "geocpm.projekt.wms.capabiliesurl";             // NOI18N
-    public static final String IMPORT_INFO_CONTRACTOR = "geocpm.projekt.auftragnehmer";              // NOI18N
-    public static final String IMPORT_INFO_STATE_DEM = "geocpm.projekt.standDGM";                    // NOI18N
-    public static final String IMPORT_INFO_STATE_ALKIS = "geocpm.projekt.standAlkis";                // NOI18N
-    public static final String IMPORT_INFO_STATE_VERDIS = "geocpm.projekt.standVerdis";              // NOI18N
-    public static final String IMPORT_INFO_CALCULATION_MODE = "geocpm.projekt.berechnungsverfahren"; // NOI18N
-    public static final String IMPORT_INFO_SEWER_NETWORK_MODEL = "geocpm.projekt.kanalnetzmodell";   // NOI18N
+    public static final String IMPORT_OUT_DIR = "import_out";                                                       // NOI18N
+    public static final String IMPORT_INFO_FILENAME = "projekt.info";                                               // NOI18N
+    public static final String IMPORT_INFO_CATCHMENT_KEY = "geocpm.projekt.gep.schluessel";                         // NOI18N
+    public static final String IMPORT_INFO_NAME = "geocpm.projekt.name";                                            // NOI18N
+    public static final String IMPORT_INFO_DESC = "geocpm.projekt.beschreibung";                                    // NOI18N
+    public static final String IMPORT_INFO_KEY = "geocpm.projekt.schluessel";                                       // NOI18N
+    public static final String IMPORT_INFO_WMS_BASE_URL = "geocpm.projekt.wms.baseurl";                             // NOI18N
+    public static final String IMPORT_INFO_WMS_CAP = "geocpm.projekt.wms.capabiliesurl";                            // NOI18N
+    public static final String IMPORT_INFO_CONTRACTOR_KEY = "geocpm.projekt.auftragnehmer.schluessel";              // NOI18N
+    public static final String IMPORT_INFO_STATE_DEM = "geocpm.projekt.standDGM";                                   // NOI18N
+    public static final String IMPORT_INFO_STATE_ALKIS = "geocpm.projekt.standAlkis";                               // NOI18N
+    public static final String IMPORT_INFO_STATE_VERDIS = "geocpm.projekt.standVerdis";                             // NOI18N
+    public static final String IMPORT_INFO_CALCULATION_MODE_KEY = "geocpm.projekt.berechnungsverfahren.schluessel"; // NOI18N
+    public static final String IMPORT_INFO_SEWER_NETWORK_MODEL = "geocpm.projekt.kanalnetzmodell";                  // NOI18N
 
     public static final String PROJECT_INFO_FILENAME = "zm.info";                    // NOI18N
     public static final String PROJECT_INFO_NAME = "geocpm.projekt.zm.name";         // NOI18N
+    public static final String PROJECT_INFO_KEY = "geocpm.projekt.zm.schluessel";    // NOI18N
     public static final String PROJECT_INFO_TYPE = "geocpm.projekt.zm.typ";          // NOI18N
     public static final String PROJECT_INFO_DESC = "geocpm.projekt.zm.beschreibung"; // NOI18N
 

@@ -17,5 +17,5 @@ public enum Type {
 
     //~ Enum constants ---------------------------------------------------------
 
-    Ist, Prognose, Sanierung
+    ist, prognose, sanierung
 }

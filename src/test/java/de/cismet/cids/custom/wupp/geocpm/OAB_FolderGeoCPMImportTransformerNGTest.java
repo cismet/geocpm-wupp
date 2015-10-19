@@ -229,11 +229,11 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         assertTrue(bt100ORE.createNewFile());
         
         BufferedWriter bw = new BufferedWriter(new FileWriter(proj));
-        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_NAME + "=cm1");
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_KEY + "=cm1");
         bw.newLine();
-        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR + "=con1");
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR_KEY + "=con1");
         bw.newLine();
-        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE + "=mode1");
+        bw.write(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE_KEY + "=mode1");
         bw.newLine();
         bw.write(WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL + "=sewer1");
         bw.newLine();
@@ -255,7 +255,7 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         bw.newLine();
         bw.write(WuppGeoCPMConstants.PROJECT_INFO_NAME + "=n1");
         bw.newLine();
-        bw.write(WuppGeoCPMConstants.PROJECT_INFO_TYPE + "=Ist");
+        bw.write(WuppGeoCPMConstants.PROJECT_INFO_TYPE + "=ist");
         bw.close();
         
         bw = new BufferedWriter(new FileWriter(z2));
@@ -263,7 +263,7 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         bw.newLine();
         bw.write(WuppGeoCPMConstants.PROJECT_INFO_NAME + "=n2");
         bw.newLine();
-        bw.write(WuppGeoCPMConstants.PROJECT_INFO_TYPE + "=Sanierung");
+        bw.write(WuppGeoCPMConstants.PROJECT_INFO_TYPE + "=sanierung");
         bw.close();
         
         bw = new BufferedWriter(new FileWriter(at20Calc));
@@ -334,12 +334,13 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
             
         assertTrue(g instanceof WuppGeoCPMProject);
         WuppGeoCPMProject w = (WuppGeoCPMProject)g;
-        assertEquals(w.getCatchmentName(), "cm1");
-        assertEquals(w.getContractor(), "con1");
+        assertEquals(w.getCatchmentKey(), "cm1");
+        assertEquals(w.getContractorKey(), "con1");
         assertEquals(w.getOutputFolder().getAbsolutePath(), 
                 new File(testFolder, WuppGeoCPMConstants.IMPORT_OUT_DIR).getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
+        assertEquals(w.getKey(), "n1");
         
         g = it.next();
         assertEquals(g.getDescription(), "d2");
@@ -373,12 +374,13 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
             
         assertTrue(g instanceof WuppGeoCPMProject);
         w = (WuppGeoCPMProject)g;
-        assertEquals(w.getCatchmentName(), "cm1");
-        assertEquals(w.getContractor(), "con1");
+        assertEquals(w.getCatchmentKey(), "cm1");
+        assertEquals(w.getContractorKey(), "con1");
         final File outDir = new File(testFolder, WuppGeoCPMConstants.IMPORT_OUT_DIR);
         assertEquals(w.getOutputFolder().getAbsolutePath(), outDir.getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
+        assertEquals(w.getKey(), "n2");
         
         final File projectSql = new File(outDir, "project.sql");
         assertTrue(projectSql.exists());
@@ -389,9 +391,8 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         assertNull(br.readLine());
         br.close();
         
-        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", beschreibung, kanalnetzmodell, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
-        + "'name1', 'desc1', 'sewer1', (SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
-        
+        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", \"key\", beschreibung, kanalnetzmodell, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
+        + "'name1', 'name1', 'desc1', 'sewer1', (SELECT id FROM oab_projekt_auftragnehmer WHERE \"key\" = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"key\" = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"key\" = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
     }
 
 }
