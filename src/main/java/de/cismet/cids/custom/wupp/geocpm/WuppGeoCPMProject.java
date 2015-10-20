@@ -30,12 +30,14 @@ public class WuppGeoCPMProject extends GeoCPMProject {
 
     //~ Instance fields --------------------------------------------------------
 
+    private String key;
     private File zustandMassnahmeSqlFile;
     private File projectSqlFile;
     private File outputFolder;
     private Type type;
-    private String catchmentName;
+    private String catchmentKey;
     private String projectName;
+    private String projectKey;
     private String projectDescription;
     private String dbDriver;
     private String dbUser;
@@ -43,10 +45,10 @@ public class WuppGeoCPMProject extends GeoCPMProject {
     private String dbConn;
     private String wmsBaseUrl;
     private String wmsCapabilitiesUrl;
-    private String contractor;
+    private String contractorKey;
     private String stateDEM;
     private Date stateAlkis;
     private Date stateVerdis;
-    private String calculationMode;
+    private String calculationModeKey;
     private String sewerNetworkModel;
 }

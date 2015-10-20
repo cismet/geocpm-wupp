@@ -160,8 +160,12 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
                 final WuppGeoCPMProject proj = (WuppGeoCPMProject)obj;
                 accept = (proj.getProjectName() != null)
                             && !proj.getProjectName().isEmpty()
-                            && (proj.getCatchmentName() != null)
-                            && !proj.getCatchmentName().isEmpty();
+                            && (proj.getProjectKey() != null)
+                            && !proj.getProjectKey().isEmpty()
+                            && (proj.getKey() != null)
+                            && !proj.getKey().isEmpty()
+                            && (proj.getCatchmentKey() != null)
+                            && !proj.getCatchmentKey().isEmpty();
 
                 if (accept) {
                     for (final GeoCPMResult r : proj.getResults()) {
@@ -275,11 +279,12 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
 
         // the geometry cannot be set yet
         final Object[] params = new Object[] {
-                proj.getProjectName(),
-                proj.getCatchmentName(),
+                proj.getProjectKey(),
+                proj.getCatchmentKey(),
                 proj.getType(),
                 proj.getDescription(),
                 proj.getName(),
+                proj.getKey(),
                 capUrl,
                 tinLayername,
                 capUrl,
@@ -336,9 +341,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     private void writeTinView(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
         final Object[] params = new Object[] {
                 createTinName(proj),
-                proj.getName(),
-                proj.getProjectName(),
-                proj.getCatchmentName()
+                proj.getKey(),
+                proj.getProjectKey(),
+                proj.getCatchmentKey()
             };
 
         bw.write(tinViewFormat.format(params));
@@ -448,9 +453,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
     private void writeBEView(final BufferedWriter bw, final WuppGeoCPMProject proj) throws IOException {
         final Object[] params = new Object[] {
                 createBEName(proj),
-                proj.getName(),
-                proj.getProjectName(),
-                proj.getCatchmentName()
+                proj.getKey(),
+                proj.getProjectKey(),
+                proj.getCatchmentKey()
             };
 
         bw.write(beViewFormat.format(params));
@@ -470,9 +475,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
             final Object[] params = new Object[] {
                     createMaxName(proj, result.getAnnuality()),
                     result.getAnnuality(),
-                    proj.getName(),
-                    proj.getProjectName(),
-                    proj.getCatchmentName()
+                    proj.getKey(),
+                    proj.getProjectKey(),
+                    proj.getCatchmentKey()
                 };
 
             bw.write(maxViewFormat.format(params));
@@ -506,9 +511,9 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
                 final Object[] params = new Object[] {
                         createTsName(proj, result.getAnnuality(), Double.valueOf(upperBound / 60).intValue()),
                         result.getAnnuality(),
-                        proj.getName(),
-                        proj.getProjectName(),
-                        proj.getCatchmentName(),
+                        proj.getKey(),
+                        proj.getProjectKey(),
+                        proj.getCatchmentKey(),
                         lowerBound,
                         upperBound
                     };
@@ -528,46 +533,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
      *
      * @return  DOCUMENT ME!
      */
-    @SuppressWarnings("fallthrough")
     private String convert(final String name) {
-        final StringBuilder sb = new StringBuilder(name);
-        for (int i = 0; i < sb.length(); ++i) {
-            switch (sb.charAt(i)) {
-                // äÄ
-                case '\u00c4':
-                case '\u00e4': {
-                    sb.replace(i, i + 1, "ae");
-                    ++i;
-                    break;
-                }
-                // öÖ
-                case '\u00d6':
-                case '\u00f6': {
-                    sb.replace(i, i + 1, "oe");
-                    ++i;
-                    break;
-                }
-                // üÜ
-                case '\u00dc':
-                case '\u00fc': {
-                    sb.replace(i, i + 1, "ue");
-                    ++i;
-                    break;
-                }
-                // ß
-                case '\u00df': {
-                    sb.replace(i, i + 1, "ss");
-                    break;
-                }
-                // <SPACE>
-                case '\u0020': {
-                    sb.setCharAt(i, '_');
-                    break;
-                }
-            }
-        }
-
-        final String conv = sb.toString().toLowerCase().replaceAll("[^a-z0-9_]", ""); // NOI18N
+        final String conv = Tools.convertString(name);
 
         return (conv.length() > 16) ? conv.substring(0, 16) : conv;
     }
@@ -781,15 +748,15 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformer implements GeoCPMProject
         bw.write(boundingGeomUpdate);
         bw.newLine();
 
-        if (proj.getType() == Type.Ist) {
+        if (proj.getType() == Type.ist) {
             bw.newLine();
             // writing the geometry again for the project
             bw.write(boundingGeomInsert);
             bw.newLine();
 
             final Object[] params = new Object[] {
-                    proj.getProjectName(),
-                    proj.getCatchmentName()
+                    proj.getProjectKey(),
+                    proj.getCatchmentKey()
                 };
             bw.write(boundingGeomProjFormat.format(params));
             bw.newLine();

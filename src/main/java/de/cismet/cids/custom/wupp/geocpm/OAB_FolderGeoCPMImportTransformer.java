@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import de.cismet.geocpm.api.GeoCPMProject;
 import de.cismet.geocpm.api.GeoCPMResult;
@@ -49,6 +50,21 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
     //~ Static fields/initializers ---------------------------------------------
 
     private static final String ANNUALITY_FOLDER_REGEX = "T\\d+"; // NOI18N
+
+    private static final String VALID_KEY_REGEX = "^[a-z0-9_]+$"; // NOI18N
+
+    //~ Instance fields --------------------------------------------------------
+
+    private final Pattern validKeyPattern;
+
+    //~ Constructors -----------------------------------------------------------
+
+    /**
+     * Creates a new OAB_FolderGeoCPMImportTransformer object.
+     */
+    public OAB_FolderGeoCPMImportTransformer() {
+        this.validKeyPattern = Pattern.compile(VALID_KEY_REGEX);
+    }
 
     //~ Methods ----------------------------------------------------------------
 
@@ -288,6 +304,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             try(final BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                 bw.write("INSERT INTO oab_projekt ("                                                             // NOI18N
                             + "\"name\", "                                                                       // NOI18N
+                            + "schluessel, "                                                                     // NOI18N
                             + "beschreibung, "                                                                   // NOI18N
                             + "kanalnetzmodell, "                                                                // NOI18N
                             + "auftragnehmer, "                                                                  // NOI18N
@@ -298,14 +315,15 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                             + "stand_verdis"                                                                     // NOI18N
                             + ") VALUES ("                                                                       // NOI18N
                             + "'" + proj.getProjectName() + "', "                                                // NOI18N
+                            + "'" + proj.getProjectKey() + "', "                                                 // NOI18N
                             + "'" + proj.getProjectDescription() + "', "                                         // NOI18N
                             + "'" + proj.getSewerNetworkModel() + "', "                                          // NOI18N
-                            + "(SELECT id FROM oab_projekt_auftragnehmer WHERE \"name\" = '"                     // NOI18N
-                            + proj.getContractor() + "'), "                                                      // NOI18N
-                            + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"name\" = '"              // NOI18N
-                            + proj.getCalculationMode() + "'), "                                                 // NOI18N
-                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"name\" = '"                    // NOI18N
-                            + proj.getCatchmentName() + "'), "                                                   // NOI18N
+                            + "(SELECT id FROM oab_projekt_auftragnehmer WHERE schluessel = '"                   // NOI18N
+                            + proj.getContractorKey() + "'), "                                                   // NOI18N
+                            + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE schluessel = '"            // NOI18N
+                            + proj.getCalculationModeKey() + "'), "                                              // NOI18N
+                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE schluessel = '"                  // NOI18N
+                            + proj.getCatchmentKey() + "'), "                                                    // NOI18N
                             + "'" + proj.getStateDEM() + "', "                                                   // NOI18N
                             + ((proj.getStateAlkis() == null) ? "null, "                                         // NOI18N
                                                               : ("'" + df.format(proj.getStateAlkis()) + "', ")) // NOI18N
@@ -348,10 +366,10 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             throw new TransformException("cannot read project info file", ex); // NOI18N
         }
 
-        final String catchmentName = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_NAME);
-        if ((catchmentName == null) || catchmentName.isEmpty()) {
-            throw new TransformException("cannot find catchment name: " // NOI18N
-                        + WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_NAME);
+        final String catchmentKey = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_KEY);
+        if ((catchmentKey == null) || !validKeyPattern.matcher(catchmentKey).matches()) {
+            throw new TransformException("catchment key not found or invalid: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_CATCHMENT_KEY);
         }
 
         final String projectName = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_NAME);
@@ -359,10 +377,18 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             throw new TransformException("cannot find project name: " + WuppGeoCPMConstants.IMPORT_INFO_NAME); // NOI18N
         }
 
-        final String calcMode = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
-        if ((calcMode == null) || calcMode.isEmpty()) {
-            throw new TransformException("cannot find project calculation mode: " // NOI18N
-                        + WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE);
+        String projectKey = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_KEY);
+        if (projectKey == null) {
+            // generate from project name
+            projectKey = Tools.convertString(projectName);
+        } else if (!validKeyPattern.matcher(projectKey).matches()) {
+            throw new TransformException("invalid project key: " + WuppGeoCPMConstants.IMPORT_INFO_KEY); // NOI18N
+        }
+
+        final String calcModeKey = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE_KEY);
+        if ((calcModeKey == null) || !validKeyPattern.matcher(calcModeKey).matches()) {
+            throw new TransformException("calculation mode key not found or invalid: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_CALCULATION_MODE_KEY);
         }
 
         final String sewerNetworkModel = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL);
@@ -371,10 +397,15 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                         + WuppGeoCPMConstants.IMPORT_INFO_SEWER_NETWORK_MODEL);
         }
 
+        final String contractorKey = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR_KEY);
+        if ((contractorKey == null) || !validKeyPattern.matcher(contractorKey).matches()) {
+            throw new TransformException("contractor key not found or invalid: " // NOI18N
+                        + WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR_KEY);
+        }
+
         final String projectDesc = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_DESC);
         final String wmsBaseUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_BASE_URL);
         final String wmsCapUrl = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_WMS_CAP);
-        final String contractor = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_CONTRACTOR);
         final String stateDEM = projectProps.getProperty(WuppGeoCPMConstants.IMPORT_INFO_STATE_DEM);
 
         final DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, Locale.GERMANY);
@@ -394,16 +425,17 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             // the date simply stays empty
         }
 
-        proj.setCatchmentName(catchmentName);
+        proj.setCatchmentKey(catchmentKey);
         proj.setProjectName(projectName);
+        proj.setProjectKey(projectKey);
         proj.setProjectDescription(projectDesc);
         proj.setWmsBaseUrl(wmsBaseUrl);
         proj.setWmsCapabilitiesUrl(wmsCapUrl);
-        proj.setContractor(contractor);
+        proj.setContractorKey(contractorKey);
         proj.setStateDEM(stateDEM);
         proj.setStateAlkis(stateAlkis);
         proj.setStateVerdis(stateVerdis);
-        proj.setCalculationMode(calcMode);
+        proj.setCalculationModeKey(calcModeKey);
         proj.setSewerNetworkModel(sewerNetworkModel);
     }
 
@@ -432,10 +464,19 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                 throw new TransformException("cannot find project name: " + WuppGeoCPMConstants.PROJECT_INFO_NAME); // NOI18N
             }
 
+            String projectKey = cmProperties.getProperty(WuppGeoCPMConstants.PROJECT_INFO_KEY);
+            if (projectKey == null) {
+                // generate from project name
+                projectKey = Tools.convertString(projectName);
+            } else if (!validKeyPattern.matcher(projectKey).matches()) {
+                throw new TransformException("invalid project key: " + WuppGeoCPMConstants.PROJECT_INFO_KEY); // NOI18N
+            }
+
             final String projectDesc = cmProperties.getProperty(WuppGeoCPMConstants.PROJECT_INFO_DESC);
             projectType = cmProperties.getProperty(WuppGeoCPMConstants.PROJECT_INFO_TYPE);
 
             proj.setName(projectName);
+            proj.setKey(projectKey);
             proj.setDescription(projectDesc);
         }
 

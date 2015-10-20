@@ -99,7 +99,13 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         ((WuppGeoCPMProject)p).setProjectName("test");
         assertFalse(t.accept(p));
         
-        ((WuppGeoCPMProject)p).setCatchmentName("test");
+        ((WuppGeoCPMProject)p).setKey("test");
+        assertFalse(t.accept(p));
+        
+        ((WuppGeoCPMProject)p).setProjectKey("test");
+        assertFalse(t.accept(p));
+        
+        ((WuppGeoCPMProject)p).setCatchmentKey("test");
         assertTrue(t.accept(p));
     }
 
@@ -110,15 +116,15 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
     public void testTransform() throws Exception {
         printCurrentTestName();
         
-        OAB_ZustandMassnahme_PostgisSQLTransformer t = new OAB_ZustandMassnahme_PostgisSQLTransformer();
         WuppGeoCPMProject p = new WuppGeoCPMProject();
-        p.setType(Type.Ist);
+        p.setType(Type.ist);
         
-        p.setName("zustname1");
-        p.setDescription("zustdescription1");
-        p.setProjectName("projectname123456789");
-        p.setDescription("projectdescription1");
-        p.setCatchmentName("catchment1");
+        p.setName("zustname1 Test 1");
+        p.setKey("zustname1_test_1");
+        p.setDescription("zustdescription1 Test 1");
+        p.setProjectName("projectname123456789 Test 1");
+        p.setProjectKey("projectname123456789_test_1");
+        p.setCatchmentKey("catchment1");
         p.setWmsBaseUrl("https://to.be/changed");
         p.setOutputFolder(new File(System.getProperty("java.io.tmpdir")));
         
@@ -175,6 +181,8 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
         t3.transform(p);
         t4.transform(p);
         
+        OAB_ZustandMassnahme_PostgisSQLTransformer t = new OAB_ZustandMassnahme_PostgisSQLTransformer();
+        assertTrue(t.accept(p));
         t.transform(p);
         assertNotNull(p.getZustandMassnahmeSqlFile());
         final BufferedReader expR = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("oab_zustandmassnahme_zustname1.sql")));
@@ -190,18 +198,19 @@ public class OAB_ZustandMassnahme_PostgisSQLTransformerNGTest {
     
     @Test
     public void testTransform_correctLocale() throws Exception {
-        Locale.setDefault(Locale.GERMAN);
         printCurrentTestName();
+        Locale.setDefault(Locale.GERMAN);
         
         OAB_ZustandMassnahme_PostgisSQLTransformer t = new OAB_ZustandMassnahme_PostgisSQLTransformer();
         WuppGeoCPMProject p = new WuppGeoCPMProject();
-        p.setType(Type.Ist);
+        p.setType(Type.ist);
         
-        p.setName("zustname1");
-        p.setDescription("zustdescription1");
-        p.setProjectName("projectname123456789");
-        p.setDescription("projectdescription1");
-        p.setCatchmentName("catchment1");
+        p.setName("zustname1 Test 1");
+        p.setKey("zustname1_test_1");
+        p.setDescription("zustdescription1 Test 1");
+        p.setProjectName("projectname123456789 Test 1");
+        p.setProjectKey("projectname123456789_test_1");
+        p.setCatchmentKey("catchment1");
         p.setWmsBaseUrl("https://to.be/changed");
         p.setOutputFolder(new File(System.getProperty("java.io.tmpdir")));
         
