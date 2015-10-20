@@ -391,8 +391,8 @@ public class OAB_FolderGeoCPMImportTransformerNGTest {
         assertNull(br.readLine());
         br.close();
         
-        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", \"key\", beschreibung, kanalnetzmodell, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
-        + "'name1', 'name1', 'desc1', 'sewer1', (SELECT id FROM oab_projekt_auftragnehmer WHERE \"key\" = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"key\" = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"key\" = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
+        assertEquals(insert, "INSERT INTO oab_projekt (\"name\", schluessel, beschreibung, kanalnetzmodell, auftragnehmer, berechnungsverfahren, gewaessereinzugsgebiet, stand_dgm, stand_alkis, stand_verdis) VALUES ("
+        + "'name1', 'name1', 'desc1', 'sewer1', (SELECT id FROM oab_projekt_auftragnehmer WHERE schluessel = 'con1'), (SELECT id FROM oab_projekt_berechnungsverfahren WHERE schluessel = 'mode1'), (SELECT id FROM oab_gewaessereinzugsgebiet WHERE schluessel = 'cm1'), 'state1', '1970-01-01', '1970-01-31');");
     }
 
 }

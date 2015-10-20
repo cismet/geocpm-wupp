@@ -304,7 +304,7 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
             try(final BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                 bw.write("INSERT INTO oab_projekt ("                                                             // NOI18N
                             + "\"name\", "                                                                       // NOI18N
-                            + "\"key\", "                                                                        // NOI18N
+                            + "schluessel, "                                                                     // NOI18N
                             + "beschreibung, "                                                                   // NOI18N
                             + "kanalnetzmodell, "                                                                // NOI18N
                             + "auftragnehmer, "                                                                  // NOI18N
@@ -318,11 +318,11 @@ public class OAB_FolderGeoCPMImportTransformer implements GeoCPMImportTransforme
                             + "'" + proj.getProjectKey() + "', "                                                 // NOI18N
                             + "'" + proj.getProjectDescription() + "', "                                         // NOI18N
                             + "'" + proj.getSewerNetworkModel() + "', "                                          // NOI18N
-                            + "(SELECT id FROM oab_projekt_auftragnehmer WHERE \"key\" = '"                      // NOI18N
+                            + "(SELECT id FROM oab_projekt_auftragnehmer WHERE schluessel = '"                   // NOI18N
                             + proj.getContractorKey() + "'), "                                                   // NOI18N
-                            + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE \"key\" = '"               // NOI18N
+                            + "(SELECT id FROM oab_projekt_berechnungsverfahren WHERE schluessel = '"            // NOI18N
                             + proj.getCalculationModeKey() + "'), "                                              // NOI18N
-                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE \"key\" = '"                     // NOI18N
+                            + "(SELECT id FROM oab_gewaessereinzugsgebiet WHERE schluessel = '"                  // NOI18N
                             + proj.getCatchmentKey() + "'), "                                                    // NOI18N
                             + "'" + proj.getStateDEM() + "', "                                                   // NOI18N
                             + ((proj.getStateAlkis() == null) ? "null, "                                         // NOI18N
