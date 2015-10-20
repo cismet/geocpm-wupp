@@ -8,7 +8,7 @@
 package de.cismet.cids.custom.wupp.geocpm;
 
 /**
- * DOCUMENT ME!
+ * Type enum according to 'schluessel' values in cids OAB data model v5.
  *
  * @author   martin.scholl@cismet.de
  * @version  1.0

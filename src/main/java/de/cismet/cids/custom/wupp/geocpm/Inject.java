@@ -13,9 +13,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * To not overcomplicate thing we only use this as a marker and to plain Reflection instead of using a custom annotation
- * processor. It would be much nicer to have a generic property injection mechanism. Maybe some day in the future this
- * will be done.
+ * To not make things more complicated we only use this as a marker and do plain Reflection instead of using a custom
+ * annotation processor. It would be much nicer to have a generic property injection mechanism. Maybe some day in the
+ * future this will be done.
  *
  * @author   martin.scholl@cismet.de
  * @version  1.0
