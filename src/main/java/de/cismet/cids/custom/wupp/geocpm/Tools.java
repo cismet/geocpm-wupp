@@ -67,4 +67,61 @@ public class Tools {
             }
         }
     }
+
+    /**
+     * Creates a string that only consists of the chars '[a-z0-9_]'. The rules are:<br>
+     * <br>
+     *
+     * <ul>
+     *   <li>input to lower case</li>
+     *   <li>space to '_'</li>
+     *   <li>German special chars 'äöüß' to 'aeoeuess'</li>
+     *   <li>remove any remaining chars that are not in '[a-z0-9_]'</li>
+     * </ul>
+     *
+     * @param   name  DOCUMENT ME!
+     *
+     * @return  DOCUMENT ME!
+     */
+    @SuppressWarnings("fallthrough")
+    public static String convertString(@NonNull final String name) {
+        final StringBuilder sb = new StringBuilder(name);
+        for (int i = 0; i < sb.length(); ++i) {
+            switch (sb.charAt(i)) {
+                // äÄ
+                case '\u00c4':
+                case '\u00e4': {
+                    sb.replace(i, i + 1, "ae");
+                    ++i;
+                    break;
+                }
+                // öÖ
+                case '\u00d6':
+                case '\u00f6': {
+                    sb.replace(i, i + 1, "oe");
+                    ++i;
+                    break;
+                }
+                // üÜ
+                case '\u00dc':
+                case '\u00fc': {
+                    sb.replace(i, i + 1, "ue");
+                    ++i;
+                    break;
+                }
+                // ß
+                case '\u00df': {
+                    sb.replace(i, i + 1, "ss");
+                    break;
+                }
+                // <SPACE>
+                case '\u0020': {
+                    sb.setCharAt(i, '_');
+                    break;
+                }
+            }
+        }
+
+        return sb.toString().toLowerCase().replaceAll("[^a-z0-9_]", ""); // NOI18N
+    }
 }

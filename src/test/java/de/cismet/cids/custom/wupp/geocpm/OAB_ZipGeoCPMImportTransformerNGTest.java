@@ -7,7 +7,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Iterator;
 import static org.testng.Assert.*;
@@ -158,12 +157,13 @@ public class OAB_ZipGeoCPMImportTransformerNGTest {
             
         assertTrue(g instanceof WuppGeoCPMProject);
         WuppGeoCPMProject w = (WuppGeoCPMProject)g;
-        assertEquals(w.getCatchmentName(), "cm1");
-        assertEquals(w.getContractor(), "con1");
+        assertEquals(w.getCatchmentKey(), "cm1");
+        assertEquals(w.getContractorKey(), "con1");
         assertEquals(w.getOutputFolder().getAbsolutePath(), 
                 new File(extractDir, WuppGeoCPMConstants.IMPORT_OUT_DIR).getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
+        assertEquals(w.getKey(), "n1");
         
         g = it.next();
         assertEquals(g.getDescription(), "d2");
@@ -187,12 +187,13 @@ public class OAB_ZipGeoCPMImportTransformerNGTest {
             
         assertTrue(g instanceof WuppGeoCPMProject);
         w = (WuppGeoCPMProject)g;
-        assertEquals(w.getCatchmentName(), "cm1");
-        assertEquals(w.getContractor(), "con1");
+        assertEquals(w.getCatchmentKey(), "cm1");
+        assertEquals(w.getContractorKey(), "con1");
         assertEquals(w.getOutputFolder().getAbsolutePath(), 
                 new File(extractDir, WuppGeoCPMConstants.IMPORT_OUT_DIR).getAbsolutePath());
         assertEquals(w.getProjectDescription(), "desc1");
         assertEquals(w.getProjectName(), "name1");
+        assertEquals(w.getKey(), "n2");
     }
 
 }
